@@ -13,71 +13,40 @@ proc parseFile*(path: string, t, edges: var Matrix, s: var Screen) =
     let f = open(path, fmRead)
     defer: f.close()
     var line: string
-    var n: int = 1
     while(f.readLine(line)):
-        # echo line
         case line:
         of "line":
             let 
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
-            if len(arg) != 6:
-                echo "Line " & $n & ": line has the wrong number of arguments"
-                return
-            else:
-                addEdge(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]))
-            n += 2
-            # printMatrix(edges)
+            addEdge(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]))
         of "ident":
             t.identMatrix()
-            n += 1
-            # printMatrix(t)
         of "scale":
             let 
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
-            if len(arg) != 3:
-                echo "Line " & $n & ": scale has the wrong number of arguments"
-                return
-            else:
-                let m: Matrix = makeScale(parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]))
-                # printMatrix(m)
-                mul(m, t)
-            n += 2
+                m: Matrix = makeScale(parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]))
+            mul(m, t)
         of "move":
             let 
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
-            if len(arg) != 3:
-                echo "Line " & $n & ": move has the wrong number of arguments"
-                return
-            else:
-                let m: Matrix = makeTranslate(parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]))
-                mul(m, t)
-            n += 2
+                m: Matrix = makeTranslate(parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]))
+            mul(m, t)
         of "rotate":
             let 
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
-            if len(arg) != 2:
-                echo "Line " & $n & ": rotate has the wrong number of arguments"
-                return
-            else:
-                let m = block:
-                    case arg[0] 
-                        of "x": makeRotX(parseFloat(arg[1])) 
-                        of "y": makeRotY(parseFloat(arg[1])) 
-                        of "z": makeRotZ(parseFloat(arg[1])) 
-                        else: 
-                            echo "Line " & $n & ": rotate axis not x, y, or z"
-                            return
-                mul(m, t)
-            n += 2
+            let m = block:
+                case arg[0] 
+                    of "x": makeRotX(parseFloat(arg[1])) 
+                    of "y": makeRotY(parseFloat(arg[1])) 
+                    of "z": makeRotZ(parseFloat(arg[1])) 
+                    else: raise newException(ValueError, "Axis not x, y, or z")
+            mul(m, t)
         of "apply":
-            # printMatrix(t)
-            # printMatrix(edges)
             mul(t, edges)
-            n += 1
         of "display":
             clearScreen(s)
             var c: Color
@@ -87,24 +56,18 @@ proc parseFile*(path: string, t, edges: var Matrix, s: var Screen) =
             drawLines(edges, s, c)
             savePpm(s, "img.ppm")
             let errC = execCmd("convert img.ppm img.png && display img.png")
-            n += 1
         of "save":
             clearScreen(s)
-            var nLine: string
-            if f.readLine(nLine):
-                var c: Color
-                c.red = 255
-                c.green = 255
-                c.blue = 255
-                drawLines(edges, s, c)
-                let 
-                    l: string = nLine[0 .. ^5]
-                    cmd: string = &"convert {l}.ppm {l}.png"
-                savePpm(s, l & ".ppm")
-                # echo nLine[0 .. ^5]
-                let errC = execCmd(cmd)
-            else:
-                echo "Line " & $n & ": save has no output file"
-                return
-            n += 2
-
+            var c: Color
+            c.red = 255
+            c.green = 255
+            c.blue = 255
+            drawLines(edges, s, c)
+            let 
+                nLine:string = f.readLine()
+                l: string = nLine[0 .. ^5]
+                cmd: string = &"convert {l}.ppm {l}.png"
+            savePpm(s, l & ".ppm")
+            let errC = execCmd(cmd)
+        else:
+            raise newException(ValueError, "Unrecognized command")
