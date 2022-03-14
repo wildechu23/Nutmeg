@@ -107,3 +107,12 @@ proc makeRotZ*(theta: float): Matrix =
     m[1][0] = -s
     m[1][1]  = c
     return m
+
+proc makeBezier(): Matrix =
+    return
+
+proc makeHermite(): Matrix =
+    return
+
+proc generateCurveCoefs(p0, p1, p2, p3: float, t: int): Matrix =
+    return

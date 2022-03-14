@@ -1,4 +1,7 @@
-import display, matrix
+import display, matrix, std/math
+
+proc addCurve(m: Matrix, x0, y0, x1, y1, x2, y2, x3, y3, step: float, t: int) =
+    return
 
 proc addPoint*(m: var Matrix, x, y, z: float) =
     m.add newSeq[float](4)
@@ -11,6 +14,23 @@ proc addPoint*(m: var Matrix, x, y, z: float) =
 proc addEdge*(m: var Matrix, x0, y0, z0, x1, y1, z1: float) =
     m.addPoint x0, y0, z0
     m.addPoint x1, y1, z1
+
+
+proc addCircle(m: var Matrix, cx, cy, cz, r, step: float) =
+    var 
+        t: float = step
+        x: float = cx
+        y: float = cy 
+        oX, oY: float
+    while t <= 1:
+        oX = x
+        oY = y
+        x = r*float(cos(2*PI*t)) + cx
+        y = r*float(sin(2*PI*t)) + cy
+        addEdge(m, ox, oy, cz, x, y, cz)
+        t += step
+        
+
 
 proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
     let

@@ -69,5 +69,11 @@ proc parseFile*(path: string, t, edges: var Matrix, s: var Screen) =
                 cmd: string = &"convert {l}.ppm {l}.png"
             savePpm(s, l & ".ppm")
             let errC = execCmd(cmd)
+        of "circle":
+            return
+        of "hermite":
+            return
+        of "bezier":
+            return
         else:
             raise newException(ValueError, "Unrecognized command")
