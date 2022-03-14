@@ -1,5 +1,7 @@
 import std/sequtils, std/math
 
+# IMPORTANT: m[x][y]
+
 type
     Matrix* = seq[seq[float]]
 
@@ -108,11 +110,34 @@ proc makeRotZ*(theta: float): Matrix =
     m[1][1]  = c
     return m
 
-proc makeBezier(): Matrix =
-    return
+proc makeBezier*(): Matrix =
+    var m: Matrix = newMatrix()
+    m[0][0] = -1
+    m[1][0] = 3
+    m[0][1] = 3
+    m[2][0] = -3
+    m[1][1] = -6
+    m[0][2] = -3
+    m[3][0] = 1
+    m[2][1] = 3
+    m[1][2] = 3
+    m[0][3] = 1
+    return m
 
-proc makeHermite(): Matrix =
-    return
 
-proc generateCurveCoefs(p0, p1, p2, p3: float, t: int): Matrix =
+proc makeHermite*(): Matrix =
+    var m: Matrix = newMatrix()
+    m[0][0] = 2
+    m[1][0] = -2
+    m[2][0] = 1
+    m[3][0] = 1
+    m[0][1] = -3
+    m[1][1] = 3
+    m[2][1] = -2
+    m[3][1] = -1
+    m[2][2] = 1
+    m[0][3] = 1
+    return m
+
+proc generateCurveCoefs*(p0, p1, p2, p3: float, t: int): Matrix =
     return
