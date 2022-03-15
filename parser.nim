@@ -73,16 +73,18 @@ proc parseFile*(path: string, t, edges: var Matrix, s: var Screen) =
             let 
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
-            addCircle(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]))
+            addCircle(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), 0.01)
         of "hermite":
             let 
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
-            addCurve(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]), parseFloat(arg[6]), parseFloat(arg[7]), 0.005, 'h')
+            addCurve(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]), parseFloat(arg[6]), parseFloat(arg[7]), 0.01, 'h')
         of "bezier":
             let 
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
-            addCurve(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]), parseFloat(arg[6]), parseFloat(arg[7]), 0.005, 'b')
+            addCurve(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]), parseFloat(arg[6]), parseFloat(arg[7]), 0.01, 'b')
         else:
+            if line[0] == '#':
+                continue
             raise newException(ValueError, "Unrecognized command")
