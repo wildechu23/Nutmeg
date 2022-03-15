@@ -139,5 +139,16 @@ proc makeHermite*(): Matrix =
     m[0][3] = 1
     return m
 
-proc generateCurveCoefs*(p0, p1, p2, p3: float, t: int): Matrix =
-    return
+proc generateCurveCoefs*(p0, p1, p2, p3: float, t: char): Matrix =
+    var g: Matrix = newMatrix()
+    g[0][0] = p0
+    g[0][1] = p1
+    g[0][2] = p2
+    g[0][3] = p3
+    case t:
+        of 'h':
+            mul(makeHermite(), g)
+        of 'b':
+            mul(makeBezier(), g)
+        else: raise newException(ValueError, "Curve not type h or b")
+    return g

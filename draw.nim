@@ -1,7 +1,5 @@
 import display, matrix, std/math
 
-proc addCurve(m: Matrix, x0, y0, x1, y1, x2, y2, x3, y3, step: float, t: int) =
-    return
 
 proc addPoint*(m: var Matrix, x, y, z: float) =
     m.add newSeq[float](4)
@@ -16,11 +14,11 @@ proc addEdge*(m: var Matrix, x0, y0, z0, x1, y1, z1: float) =
     m.addPoint x1, y1, z1
 
 
-proc addCircle(m: var Matrix, cx, cy, cz, r, step: float) =
+proc addCircle*(m: var Matrix, cx, cy, cz, r, step: float) =
     var 
         t: float = step
-        x: float = cx
-        y: float = cy 
+        x: float = r + cx
+        y: float = cy
         oX, oY: float
     while t <= 1:
         oX = x
@@ -29,7 +27,33 @@ proc addCircle(m: var Matrix, cx, cy, cz, r, step: float) =
         y = r*float(sin(2*PI*t)) + cy
         addEdge(m, ox, oy, cz, x, y, cz)
         t += step
-        
+      
+proc addCurve*(m: var Matrix, x0, y0, x1, y1, x2, y2, x3, y3, step: float, typ: char) =
+    var 
+        t: float = step
+        x: float = x0
+        y: float = y0 
+        oX, oY: float
+        cx, cy: Matrix
+    
+    case typ:
+        of 'h':
+            cx = generateCurveCoefs(x0, x3, x1-x0, x3-x2, 'h')
+            cy = generateCurveCoefs(y0, y3, y1-y0, y3-y2, 'h')
+        of 'b':
+            cx = generateCurveCoefs(x0, x1, x2, x3, 'b')
+            cy = generateCurveCoefs(y0, y1, y2, y3, 'b')
+        else: raise newException(ValueError, "Curve not type h or b")
+
+    while t <= 1:
+        oX = x
+        oY = y
+        x = cx[0][0]*t^3 + cx[0][1]*t^2 + cx[0][2]*t + cx[0][3]
+        y = cy[0][0]*t^3 + cy[0][1]*t^2 + cy[0][2]*t + cy[0][3]
+        if x == 0 and y == 0:
+            echo "origin"
+        addEdge(m, ox, oy, 0, x, y, 0)
+        t += step  
 
 
 proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
@@ -47,6 +71,8 @@ proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
             # octant 1
             D = a - (x1 - x0) # 2dy - dx
             while x <= x1:
+                if x == 0:
+                    echo "x 0"
                 plot(s, c, x, y)
                 if D > 0:
                     inc y
