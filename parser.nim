@@ -64,16 +64,25 @@ proc parseFile*(path: string, t, edges: var Matrix, s: var Screen) =
             c.blue = 255
             drawLines(edges, s, c)
             let 
-                nLine:string = f.readLine()
+                nLine: string = f.readLine()
                 l: string = nLine[0 .. ^5]
                 cmd: string = &"convert {l}.ppm {l}.png"
             savePpm(s, l & ".ppm")
             let errC = execCmd(cmd)
         of "circle":
-            return
+            let 
+                nextLine = f.readLine()
+                arg: seq[string] = nextLine.split(' ')
+            addCircle(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]))
         of "hermite":
-            return
+            let 
+                nextLine = f.readLine()
+                arg: seq[string] = nextLine.split(' ')
+            addCurve(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]), parseFloat(arg[6]), parseFloat(arg[7]), 0.005, 'h')
         of "bezier":
-            return
+            let 
+                nextLine = f.readLine()
+                arg: seq[string] = nextLine.split(' ')
+            addCurve(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]), parseFloat(arg[6]), parseFloat(arg[7]), 0.005, 'b')
         else:
             raise newException(ValueError, "Unrecognized command")
