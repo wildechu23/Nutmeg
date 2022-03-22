@@ -45,13 +45,12 @@ proc addCurve*(m: var Matrix, x0, y0, x1, y1, x2, y2, x3, y3, step: float, typ: 
             cy = generateCurveCoefs(y0, y1, y2, y3, 'b')
         else: raise newException(ValueError, "Curve not type h or b")
 
-    while t <= 1:
+    # floating point +step/2 stuff
+    while t < 1+step/2:
         oX = x
         oY = y
         x = cx[0][0]*t^3 + cx[0][1]*t^2 + cx[0][2]*t + cx[0][3]
         y = cy[0][0]*t^3 + cy[0][1]*t^2 + cy[0][2]*t + cy[0][3]
-        if x == 0 and y == 0:
-            echo "origin"
         addEdge(m, ox, oy, 0, x, y, 0)
         t += step  
 

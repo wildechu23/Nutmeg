@@ -66,8 +66,8 @@ proc parseFile*(path: string, t, edges: var Matrix, s: var Screen) =
             let 
                 nLine: string = f.readLine()
                 l: string = nLine[0 .. ^5]
-                cmd: string = &"convert {l}.ppm {l}.png"
-            savePpm(s, l & ".ppm")
+                cmd: string = &"convert img.ppm {l}.png"
+            savePpm(s, "img.ppm")
             let errC = execCmd(cmd)
         of "circle":
             let 
