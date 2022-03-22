@@ -67,11 +67,26 @@ proc addBox*(m: var Matrix, x, y, z, width, height, depth: float) =
     addEdge(m, x, y - height, z - depth, x, y, z - depth)
     addEdge(m, x, y - height, z - depth, x, y - height, z)
 
-proc addSphere(m: var Matrix, cx, cy, cz, r: float, step: int) =
-    return
-
 proc generateSphere(cx, cy, cz, r: float, step: int): Matrix =
-    return
+    var 
+        m: Matrix = newMatrix(0, 0)
+        i: int = 0
+        j: int = 0
+    while i < 20:
+        while j < 20:
+            let
+                x = r * cos(PI * float(j/20)) + cx
+                y = r * sin(PI * float(j/20)) * cos(2 * PI * float(i/20)) + cy
+                z = r * sin(PI * float(j/20)) * sin(2 * PI * float(i/20)) + cz
+            addPoint(m, x, y, z)
+            j += step
+        i += step
+        j = 0
+    return m
+
+proc addSphere*(m: var Matrix, cx, cy, cz, r: float, step: int) =
+    for i in generateSphere(cx, cy, cz, r, step):
+        addEdge(m, i[0], i[1], i[2], i[0], i[1], i[2])
 
 proc addTorus(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
     return

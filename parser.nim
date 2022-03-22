@@ -92,7 +92,10 @@ proc parseFile*(path: string, t, edges: var Matrix, s: var Screen) =
                 arg: seq[string] = nextLine.split(' ')
             addBox(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]))
         of "sphere":
-            return
+            let 
+                nextLine = f.readLine()
+                arg: seq[string] = nextLine.split(' ')
+            addSphere(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), 1)
         of "torus":
             return
         else:
