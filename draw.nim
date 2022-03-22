@@ -1,6 +1,5 @@
 import display, matrix, std/math
 
-
 proc addPoint*(m: var Matrix, x, y, z: float) =
     m.add newSeq[float](4)
     m[len(m)-1][0] = x
@@ -54,6 +53,20 @@ proc addCurve*(m: var Matrix, x0, y0, x1, y1, x2, y2, x3, y3, step: float, typ: 
         addEdge(m, ox, oy, 0, x, y, 0)
         t += step  
 
+proc addBox(m: var Matrix, x, y, z, width, height, depth: float) =
+    return
+
+proc addSphere(m: var Matrix, cx, cy, cz, r: float, step: int) =
+    return
+
+proc generateSphere(cx, cy, cz, r: float, step: int): Matrix =
+    return
+
+proc addTorus(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
+    return
+
+proc generateTorus(cx, cy, cz, r1, r2: float, step: int): Matrix =
+    return
 
 proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
     let
