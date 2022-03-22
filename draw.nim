@@ -53,8 +53,19 @@ proc addCurve*(m: var Matrix, x0, y0, x1, y1, x2, y2, x3, y3, step: float, typ: 
         addEdge(m, ox, oy, 0, x, y, 0)
         t += step  
 
-proc addBox(m: var Matrix, x, y, z, width, height, depth: float) =
-    return
+proc addBox*(m: var Matrix, x, y, z, width, height, depth: float) =
+    addEdge(m, x, y, z, x + width, y, z)
+    addEdge(m, x, y, z, x, y - height, z)
+    addEdge(m, x, y, z, x, y, z - depth)
+    addEdge(m, x + width, y - height, z, x, y - height, z)
+    addEdge(m, x + width, y - height, z, x + width, y, z)
+    addEdge(m, x + width, y - height, z, x + width, y - height, z - depth)
+    addEdge(m, x + width, y, z - depth, x, y, z - depth)
+    addEdge(m, x + width, y, z - depth, x + width, y - height, z - depth)
+    addEdge(m, x + width, y, z - depth, x + width, y, z)
+    addEdge(m, x, y - height, z - depth, x + width, y - height, z - depth)
+    addEdge(m, x, y - height, z - depth, x, y, z - depth)
+    addEdge(m, x, y - height, z - depth, x, y - height, z)
 
 proc addSphere(m: var Matrix, cx, cy, cz, r: float, step: int) =
     return
