@@ -88,11 +88,26 @@ proc addSphere*(m: var Matrix, cx, cy, cz, r: float, step: int) =
     for i in generateSphere(cx, cy, cz, r, step):
         addEdge(m, i[0], i[1], i[2], i[0], i[1], i[2])
 
-proc addTorus(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
-    return
-
 proc generateTorus(cx, cy, cz, r1, r2: float, step: int): Matrix =
-    return
+    var 
+        m: Matrix = newMatrix(0, 0)
+        i: int = 0
+        j: int = 0
+    while i < 20:
+        while j < 20:
+            let
+                x = (r1 * cos(2 * PI * float(j/20)) + r2) * cos(2 * PI * float(i/20)) + cx
+                y = r1 * sin(2 * PI * float(j/20)) + cy
+                z = (r1 * cos(2 * PI * float(j/20)) + r2) * -1 * sin(2 * PI * float(i/20)) + cz
+            addPoint(m, x, y, z)
+            j += step
+        i += step
+        j = 0
+    return m
+
+proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
+    for i in generateTorus(cx, cy, cz, r1, r2, step):
+        addEdge(m, i[0], i[1], i[2], i[0], i[1], i[2])
 
 proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
     let
