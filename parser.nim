@@ -9,7 +9,7 @@ import display, draw, matrix, std/strutils, std/osproc, std/strformat
 # display: clear the screen, draw the lines of the point matrix to the screen, display the screen
 # save: clear the screen, draw the lines of the point matrix to the screen/frame save the screen/frame to a file - takes 1 argument (file name)
 
-proc parseFile*(path: string, t, edges: var Matrix, s: var Screen) = 
+proc parseFile*(path: string, t, edges, polygons: var Matrix, s: var Screen) = 
     let f = open(path, fmRead)
     defer: f.close()
     var line: string

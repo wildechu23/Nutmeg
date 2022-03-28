@@ -109,6 +109,12 @@ proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
     for i in generateTorus(cx, cy, cz, r1, r2, step):
         addEdge(m, i[0], i[1], i[2], i[0], i[1], i[2])
 
+proc addPolygon(m: var Matrix, x0, y0, z0, x1, y1, z1, x2, y2, z2: float) =
+    return
+
+proc drawPolygons(m: var Matrix, s: var Screen, c: Color) =
+    return
+
 proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
     let
         a: int = 2*(y1 - y0) # A
