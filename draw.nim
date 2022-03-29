@@ -7,11 +7,15 @@ proc addPoint*(m: var Matrix, x, y, z: float) =
     m[len(m)-1][2] = z
     m[len(m)-1][3] = 1
 
-
 proc addEdge*(m: var Matrix, x0, y0, z0, x1, y1, z1: float) =
     m.addPoint x0, y0, z0
     m.addPoint x1, y1, z1
 
+
+proc addPolygon(m: var Matrix, x0, y0, z0, x1, y1, z1, x2, y2, z2: float) =
+    m.addPoint x0, y0, z0
+    m.addPoint x1, y1, z1
+    m.addPoint x2, y2, z2
 
 proc addCircle*(m: var Matrix, cx, cy, cz, r, step: float) =
     var 
@@ -37,7 +41,8 @@ proc addCurve*(m: var Matrix, x0, y0, x1, y1, x2, y2, x3, y3, step: float, typ: 
     
     case typ:
         of 'h':
-            cx = generateCurveCoefs(x0, x1, x2, x3, 'h')
+            cx = generateCurveCoefs(x0, x1, x2, x3, 'h')        drawLine(int(a[0]), int(a[1]))
+
             cy = generateCurveCoefs(y0, y1, y2, y3, 'h')
         of 'b':
             cx = generateCurveCoefs(x0, x1, x2, x3, 'b')
@@ -108,12 +113,6 @@ proc generateTorus(cx, cy, cz, r1, r2: float, step: int): Matrix =
 proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
     for i in generateTorus(cx, cy, cz, r1, r2, step):
         addEdge(m, i[0], i[1], i[2], i[0], i[1], i[2])
-
-proc addPolygon(m: var Matrix, x0, y0, z0, x1, y1, z1, x2, y2, z2: float) =
-    return
-
-proc drawPolygons(m: var Matrix, s: var Screen, c: Color) =
-    return
 
 proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
     let
@@ -197,6 +196,14 @@ proc drawLines*(m: Matrix, s: var Screen, c: Color) =
         let
             a = m[2*i]
             b = m[2*i + 1]
-        # echo $a[0] & " " & $a[1]
-        # echo $b[0] & " " & $b[1]
         drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, c)
+
+proc drawPolygons(m: var Matrix, s: var Screen, color: Color) =
+    for i in 0..<(m.len div 3):
+        let
+            a = m[3*i]
+            b = m[3*i + 1]
+            c = m[3*i + 2]
+        drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, color)
+        drawLine(int(b[0]), int(b[1]), int(c[0]), int(c[1]), s, color)
+        drawLine(int(c[0]), int(c[1]), int(a[0]), int(a[1]), s, color)
