@@ -41,8 +41,7 @@ proc addCurve*(m: var Matrix, x0, y0, x1, y1, x2, y2, x3, y3, step: float, typ: 
     
     case typ:
         of 'h':
-            cx = generateCurveCoefs(x0, x1, x2, x3, 'h')        drawLine(int(a[0]), int(a[1]))
-
+            cx = generateCurveCoefs(x0, x1, x2, x3, 'h')
             cy = generateCurveCoefs(y0, y1, y2, y3, 'h')
         of 'b':
             cx = generateCurveCoefs(x0, x1, x2, x3, 'b')
@@ -59,18 +58,31 @@ proc addCurve*(m: var Matrix, x0, y0, x1, y1, x2, y2, x3, y3, step: float, typ: 
         t += step  
 
 proc addBox*(m: var Matrix, x, y, z, width, height, depth: float) =
-    addEdge(m, x, y, z, x + width, y, z)
-    addEdge(m, x, y, z, x, y - height, z)
-    addEdge(m, x, y, z, x, y, z - depth)
-    addEdge(m, x + width, y - height, z, x, y - height, z)
-    addEdge(m, x + width, y - height, z, x + width, y, z)
-    addEdge(m, x + width, y - height, z, x + width, y - height, z - depth)
-    addEdge(m, x + width, y, z - depth, x, y, z - depth)
-    addEdge(m, x + width, y, z - depth, x + width, y - height, z - depth)
-    addEdge(m, x + width, y, z - depth, x + width, y, z)
-    addEdge(m, x, y - height, z - depth, x + width, y - height, z - depth)
-    addEdge(m, x, y - height, z - depth, x, y, z - depth)
-    addEdge(m, x, y - height, z - depth, x, y - height, z)
+    # addEdge(m, x, y, z, x + width, y, z)
+    # addEdge(m, x, y, z, x, y - height, z)
+    # addEdge(m, x, y, z, x, y, z - depth)
+    # addEdge(m, x + width, y - height, z, x, y - height, z)
+    # addEdge(m, x + width, y - height, z, x + width, y, z)
+    # addEdge(m, x + width, y - height, z, x + width, y - height, z - depth)
+    # addEdge(m, x + width, y, z - depth, x, y, z - depth)
+    # addEdge(m, x + width, y, z - depth, x + width, y - height, z - depth)
+    # addEdge(m, x + width, y, z - depth, x + width, y, z)
+    # addEdge(m, x, y - height, z - depth, x + width, y - height, z - depth)
+    # addEdge(m, x, y - height, z - depth, x, y, z - depth)
+    # addEdge(m, x, y - height, z - depth, x, y - height, z)
+    addPolygon(m, x, y, z, x + width, y, z, x, y, z - depth)
+    addPolygon(m, x, y, z, x, y - height, z, x + width, y, z)
+    addPolygon(m, x, y, z, x, y, z - depth, x, y - height, z)
+    addPolygon(m, x + width, y - height, z, x, y - height, z, x + width, y - height, z - depth)
+    addPolygon(m, x + width, y - height, z, x + width, y, z, x, y - height, z)
+    addPolygon(m, x + width, y - height, z, x + width, y - height, z - depth, x + width, y, z)
+    addPolygon(m, x + width, y, z - depth, x, y, z - depth, x + width, y, z)
+    addPolygon(m, x + width, y, z - depth, x + width, y - height, z - depth, x, y, z - depth)
+    addPolygon(m, x + width, y, z - depth, x + width, y, z, x + width, y - height, z - depth)
+    addPolygon(m, x, y - height, z - depth, x + width, y - height, z - depth, x, y - height, z)
+    addPolygon(m, x, y - height, z - depth, x, y, z - depth, x + width, y - height, z - depth)
+    addPolygon(m, x, y - height, z - depth, x, y - height, z, x, y, z - depth)
+
 
 proc generateSphere(cx, cy, cz, r: float, step: int): Matrix =
     var 
@@ -90,8 +102,15 @@ proc generateSphere(cx, cy, cz, r: float, step: int): Matrix =
     return m
 
 proc addSphere*(m: var Matrix, cx, cy, cz, r: float, step: int) =
-    for i in generateSphere(cx, cy, cz, r, step):
-        addEdge(m, i[0], i[1], i[2], i[0], i[1], i[2])
+    var i = 0
+    let p = generateSphere(cx, cy, cz, r, step)
+    const n = 20
+    while i <= p[0].len:
+        addPolygon(m, p[i][0], p[i][1], p[i][2], p[i+1][0], p[i+1][1], p[i+1][2], p[i+n+1][0], p[i+n+1][1], p[i+n+1][2])
+        for j in i..<i+n-1:
+            addPolygon(m, p[i][0], p[i][1], p[i][2], p[i+1][0], p[i+1][1], p[i+1][2], p[i+n+1][0], p[i+n+1][1], p[i+n+1][2])
+            addPolygon(m, p[i][0], p[i][1], p[i][2], p[i+n+1][0], p[i+n+1][1], p[i+n+1][2], p[i+n][0], p[i+n][1], p[i+n][2])
+        i += n
 
 proc generateTorus(cx, cy, cz, r1, r2: float, step: int): Matrix =
     var 
@@ -198,7 +217,7 @@ proc drawLines*(m: Matrix, s: var Screen, c: Color) =
             b = m[2*i + 1]
         drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, c)
 
-proc drawPolygons(m: var Matrix, s: var Screen, color: Color) =
+proc drawPolygons*(m: var Matrix, s: var Screen, color: Color) =
     for i in 0..<(m.len div 3):
         let
             a = m[3*i]

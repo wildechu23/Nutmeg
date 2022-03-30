@@ -47,6 +47,7 @@ proc parseFile*(path: string, t, edges, polygons: var Matrix, s: var Screen) =
             mul(m, t)
         of "apply":
             mul(t, edges)
+            mul(t, polygons)
         of "display":
             clearScreen(s)
             var c: Color
@@ -54,6 +55,7 @@ proc parseFile*(path: string, t, edges, polygons: var Matrix, s: var Screen) =
             c.green = 255
             c.blue = 255
             drawLines(edges, s, c)
+            drawPolygons(polygons, s, c)
             savePpm(s, "img.ppm")
             let errC = execCmd("convert img.ppm img.png && display img.png")
         of "save":
@@ -63,6 +65,7 @@ proc parseFile*(path: string, t, edges, polygons: var Matrix, s: var Screen) =
             c.green = 255
             c.blue = 255
             drawLines(edges, s, c)
+            drawPolygons(polygons, s, c)
             let 
                 nLine: string = f.readLine()
                 l: string = nLine[0 .. ^5]
@@ -90,7 +93,7 @@ proc parseFile*(path: string, t, edges, polygons: var Matrix, s: var Screen) =
             let 
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
-            addBox(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]))
+            addBox(polygons, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]))
         of "sphere":
             let 
                 nextLine = f.readLine()
