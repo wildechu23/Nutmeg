@@ -105,12 +105,14 @@ proc addSphere*(m: var Matrix, cx, cy, cz, r: float, step: int) =
     var i = 0
     let p = generateSphere(cx, cy, cz, r, step)
     const n = 20
-    while i <= p[0].len:
+    while i < p.len - n:
         addPolygon(m, p[i][0], p[i][1], p[i][2], p[i+1][0], p[i+1][1], p[i+1][2], p[i+n+1][0], p[i+n+1][1], p[i+n+1][2])
         for j in i..<i+n-1:
-            addPolygon(m, p[i][0], p[i][1], p[i][2], p[i+1][0], p[i+1][1], p[i+1][2], p[i+n+1][0], p[i+n+1][1], p[i+n+1][2])
-            addPolygon(m, p[i][0], p[i][1], p[i][2], p[i+n+1][0], p[i+n+1][1], p[i+n+1][2], p[i+n][0], p[i+n][1], p[i+n][2])
-        i += n
+            addPolygon(m, p[j][0], p[j][1], p[j][2], p[j+1][0], p[j+1][1], p[j+1][2], p[j+n+1][0], p[j+n+1][1], p[j+n+1][2])
+            addPolygon(m, p[j][0], p[j][1], p[j][2], p[j+n+1][0], p[j+n+1][1], p[j+n+1][2], p[j+n][0], p[j+n][1], p[j+n][2])
+        i += n - 2
+        addPolygon(m, p[i][0], p[i][1], p[i][2], p[i+n+1][0], p[i+n+1][1], p[i+n+1][2], p[i+n][0], p[i+n][1], p[i+n][2])
+        i += 2
 
 proc generateTorus(cx, cy, cz, r1, r2: float, step: int): Matrix =
     var 
@@ -130,8 +132,15 @@ proc generateTorus(cx, cy, cz, r1, r2: float, step: int): Matrix =
     return m
 
 proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
-    for i in generateTorus(cx, cy, cz, r1, r2, step):
-        addEdge(m, i[0], i[1], i[2], i[0], i[1], i[2])
+    var i = 0
+    let p = generateTorus(cx, cy, cz, r1, r2, step)
+    const n = 20
+    echo p.len
+    while i < p[0].len:
+        for j in i..i+n-1:
+            addPolygon(m, p[j][0], p[j][1], p[j][2], p[j+1][0], p[j+1][1], p[j+1][2], p[j+n+1][0], p[j+n+1][1], p[j+n+1][2])
+            addPolygon(m, p[j][0], p[j][1], p[j][2], p[j+n+1][0], p[j+n+1][1], p[j+n+1][2], p[j+n][0], p[j+n][1], p[j+n][2])
+        i += n
 
 proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
     let
@@ -148,8 +157,6 @@ proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
             # octant 1
             D = a - (x1 - x0) # 2dy - dx
             while x <= x1:
-                if x == 0:
-                    echo "x 0"
                 plot(s, c, x, y)
                 if D > 0:
                     inc y
