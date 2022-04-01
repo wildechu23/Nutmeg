@@ -103,7 +103,7 @@ proc parseFile*(path: string, t, edges, polygons: var Matrix, s: var Screen) =
             let 
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
-            addTorus(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), 1)
+            addTorus(polygons, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), 1)
         else:
             if line[0] == '#':
                 continue

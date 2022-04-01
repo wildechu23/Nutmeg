@@ -89,12 +89,13 @@ proc generateSphere(cx, cy, cz, r: float, step: int): Matrix =
         m: Matrix = newMatrix(0, 0)
         i: int = 0
         j: int = 0
-    while i < 20:
-        while j < 20:
+    const n = 20
+    while i < n:
+        while j < n:
             let
-                x = r * cos(PI * float(j/20)) + cx
-                y = r * sin(PI * float(j/20)) * cos(2 * PI * float(i/20)) + cy
-                z = r * sin(PI * float(j/20)) * sin(2 * PI * float(i/20)) + cz
+                x = r * cos(PI * float(j/n)) + cx
+                y = r * sin(PI * float(j/n)) * cos(2 * PI * float(i/n)) + cy
+                z = r * sin(PI * float(j/n)) * sin(2 * PI * float(i/n)) + cz
             addPoint(m, x, y, z)
             j += step
         i += step
@@ -119,12 +120,13 @@ proc generateTorus(cx, cy, cz, r1, r2: float, step: int): Matrix =
         m: Matrix = newMatrix(0, 0)
         i: int = 0
         j: int = 0
-    while i < 20:
-        while j < 20:
+    const n = 10
+    while i < n:
+        while j < n:
             let
-                x = (r1 * cos(2 * PI * float(j/20)) + r2) * cos(2 * PI * float(i/20)) + cx
-                y = r1 * sin(2 * PI * float(j/20)) + cy
-                z = (r1 * cos(2 * PI * float(j/20)) + r2) * -1 * sin(2 * PI * float(i/20)) + cz
+                x = (r1 * cos(2 * PI * float(j/n)) + r2) * cos(2 * PI * float(i/n)) + cx
+                y = r1 * sin(2 * PI * float(j/n)) + cy
+                z = (r1 * cos(2 * PI * float(j/n)) + r2) * -1 * sin(2 * PI * float(i/n)) + cz
             addPoint(m, x, y, z)
             j += step
         i += step
@@ -134,14 +136,16 @@ proc generateTorus(cx, cy, cz, r1, r2: float, step: int): Matrix =
 proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
     var i = 0
     let p = generateTorus(cx, cy, cz, r1, r2, step)
-    const n = 20
+    const n = 10
     echo p.len
-    while i < p[0].len:
-        for j in i..i+n-1:
-            addPolygon(m, p[j][0], p[j][1], p[j][2], p[j+1][0], p[j+1][1], p[j+1][2], p[j+n+1][0], p[j+n+1][1], p[j+n+1][2])
-            addPolygon(m, p[j][0], p[j][1], p[j][2], p[j+n+1][0], p[j+n+1][1], p[j+n+1][2], p[j+n][0], p[j+n][1], p[j+n][2])
+    while i < p.len - n:
+        for j in i..<i+n-1:
+            addPolygon(m, p[j][0], p[j][1], p[j][2], p[j+n+1][0], p[j+n+1][1], p[j+n+1][2], p[j+1][0], p[j+1][1], p[j+1][2])
+            addPolygon(m, p[j][0], p[j][1], p[j][2], p[j+n][0], p[j+n][1], p[j+n][2], p[j+n+1][0], p[j+n+1][1], p[j+n+1][2])
+        addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[i+n][0], p[i+n][1], p[i+n][2], p[i][0], p[i][1], p[i][2])
+        addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[i+2*n-1][0], p[i+2*n-1][1], p[i+2*n-1][2], p[i+n][0], p[i+n][1], p[i+n][2])
         i += n
-
+        
 proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
     let
         a: int = 2*(y1 - y0) # A
