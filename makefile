@@ -1,4 +1,4 @@
-all: main display draw matrix parser
+all: main display draw gmath matrix parser
 
 main: main.nim display.nim draw.nim matrix.nim 
 	nim c main.nim
@@ -6,8 +6,11 @@ main: main.nim display.nim draw.nim matrix.nim
 display: display.nim
 	nim c display.nim
 
-draw: draw.nim display.nim matrix.nim
+draw: draw.nim display.nim gmath.nim matrix.nim
 	nim c draw.nim
+
+gmath: gmath.nim matrix.nim
+	nim c gmath.nim
 
 matrix: matrix.nim
 	nim c matrix.nim

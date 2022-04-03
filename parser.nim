@@ -89,6 +89,7 @@ proc parseFile*(path: string, t, edges, polygons: var Matrix, s: var Screen) =
             addCurve(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]), parseFloat(arg[6]), parseFloat(arg[7]), 0.01, 'b')
         of "clear":
             edges = newMatrix(0, 0)
+            polygons = newMatrix(0, 0)
         of "box":
             let 
                 nextLine = f.readLine()

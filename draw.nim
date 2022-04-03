@@ -1,4 +1,4 @@
-import display, matrix, std/math
+import display, gmath, matrix, std/math
 
 proc addPoint*(m: var Matrix, x, y, z: float) =
     m.add newSeq[float](4)
@@ -91,7 +91,7 @@ proc generateSphere(cx, cy, cz, r: float, step: int): Matrix =
         j: int = 0
     const n = 20
     while i < n:
-        while j < n:
+        while j <= n:
             let
                 x = r * cos(PI * float(j/n)) + cx
                 y = r * sin(PI * float(j/n)) * cos(2 * PI * float(i/n)) + cy
@@ -106,14 +106,21 @@ proc addSphere*(m: var Matrix, cx, cy, cz, r: float, step: int) =
     var i = 0
     let p = generateSphere(cx, cy, cz, r, step)
     const n = 20
-    while i < p.len - n:
+    while i < p.len - n - 1:
         addPolygon(m, p[i][0], p[i][1], p[i][2], p[i+1][0], p[i+1][1], p[i+1][2], p[i+n+1][0], p[i+n+1][1], p[i+n+1][2])
-        for j in i..<i+n-1:
+        for j in i..i+n-1:
             addPolygon(m, p[j][0], p[j][1], p[j][2], p[j+1][0], p[j+1][1], p[j+1][2], p[j+n+1][0], p[j+n+1][1], p[j+n+1][2])
             addPolygon(m, p[j][0], p[j][1], p[j][2], p[j+n+1][0], p[j+n+1][1], p[j+n+1][2], p[j+n][0], p[j+n][1], p[j+n][2])
-        i += n - 2
+        i += n - 1
         addPolygon(m, p[i][0], p[i][1], p[i][2], p[i+n+1][0], p[i+n+1][1], p[i+n+1][2], p[i+n][0], p[i+n][1], p[i+n][2])
         i += 2
+
+    addPolygon(m, p[i][0], p[i][1], p[i][2], p[i+1][0], p[i+1][1], p[i+1][2], p[1][0], p[1][1], p[1][2])
+    for j in i..i+n-1:
+        addPolygon(m, p[j][0], p[j][1], p[j][2], p[j+1][0], p[j+1][1], p[j+1][2], p[j-i+1][0], p[j-i+1][1], p[j-i+1][2])
+        addPolygon(m, p[j][0], p[j][1], p[j][2], p[j-i+1][0], p[j-i+1][1], p[j-i+1][2], p[j-i][0], p[j-i][1], p[j-i][2])
+    i += n - 1
+    addPolygon(m, p[i][0], p[i][1], p[i][2], p[n-1][0], p[n-1][1], p[n-1][2], p[n-2][0], p[n-2][1], p[n-2][2])
 
 proc generateTorus(cx, cy, cz, r1, r2: float, step: int): Matrix =
     var 
@@ -137,7 +144,6 @@ proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
     var i = 0
     let p = generateTorus(cx, cy, cz, r1, r2, step)
     const n = 10
-    echo p.len
     while i < p.len - n:
         for j in i..<i+n-1:
             addPolygon(m, p[j][0], p[j][1], p[j][2], p[j+n+1][0], p[j+n+1][1], p[j+n+1][2], p[j+1][0], p[j+1][1], p[j+1][2])
@@ -145,6 +151,12 @@ proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
         addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[i+n][0], p[i+n][1], p[i+n][2], p[i][0], p[i][1], p[i][2])
         addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[i+2*n-1][0], p[i+2*n-1][1], p[i+2*n-1][2], p[i+n][0], p[i+n][1], p[i+n][2])
         i += n
+    
+    for j in i..<i+n-1:
+        addPolygon(m, p[j][0], p[j][1], p[j][2], p[j-i+1][0], p[j-i+1][1], p[j-i+1][2], p[j+1][0], p[j+1][1], p[j+1][2])
+        addPolygon(m, p[j][0], p[j][1], p[j][2], p[j-i][0], p[j-i][1], p[j-i][2], p[j-i+1][0], p[j-i+1][1], p[j-i+1][2])
+    addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[0][0], p[0][1], p[0][2], p[i][0], p[i][1], p[i][2])
+    addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[n-1][0], p[n-1][1], p[n-1][2], p[0][0], p[0][1], p[0][2])
         
 proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
     let
@@ -234,6 +246,8 @@ proc drawPolygons*(m: var Matrix, s: var Screen, color: Color) =
             a = m[3*i]
             b = m[3*i + 1]
             c = m[3*i + 2]
-        drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, color)
-        drawLine(int(b[0]), int(b[1]), int(c[0]), int(c[1]), s, color)
-        drawLine(int(c[0]), int(c[1]), int(a[0]), int(a[1]), s, color)
+            n = calculateNormal(m, 3*i)
+        if dotProduct(n, (0.0, 0.0, 1.0)) > 0:
+            drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, color)
+            drawLine(int(b[0]), int(b[1]), int(c[0]), int(c[1]), s, color)
+            drawLine(int(c[0]), int(c[1]), int(a[0]), int(a[1]), s, color)
