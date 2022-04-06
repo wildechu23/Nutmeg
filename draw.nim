@@ -2,10 +2,11 @@ import display, gmath, matrix, std/math
 
 proc addPoint*(m: var Matrix, x, y, z: float) =
     m.add newSeq[float](4)
-    m[len(m)-1][0] = x
-    m[len(m)-1][1] = y
-    m[len(m)-1][2] = z
-    m[len(m)-1][3] = 1
+    let i = len(m) - 1
+    m[i][0] = x
+    m[i][1] = y
+    m[i][2] = z
+    m[i][3] = 1
 
 proc addEdge*(m: var Matrix, x0, y0, z0, x1, y1, z1: float) =
     m.addPoint x0, y0, z0

@@ -1,14 +1,5 @@
 import display, draw, matrix, std/strutils, std/osproc, std/strformat
 
-# line: add a line to the point matrix - takes 6 arguemnts (x0, y0, z0, x1, y1, z1)
-# ident: set the transform matrix to the identity matrix
-# scale: create a scale matrix, then multiply the transform matrix by the scale matrix - takes 3 arguments (sx, sy, sz)
-# move: create a translation matrix, then multiply the transform matrix by the translation matrix - takes 3 arguments (tx, ty, tz)
-# rotate: create a rotation matrix, then multiply the transform matrix by the rotation matrix - takes 2 arguments (axis theta)
-# apply: apply the current transformation matrix to the edge matrix
-# display: clear the screen, draw the lines of the point matrix to the screen, display the screen
-# save: clear the screen, draw the lines of the point matrix to the screen/frame save the screen/frame to a file - takes 1 argument (file name)
-
 proc parseFile*(path: string, t, edges, polygons: var Matrix, s: var Screen) = 
     let f = open(path, fmRead)
     defer: f.close()

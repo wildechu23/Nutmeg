@@ -22,6 +22,6 @@ run:
 	./main
 
 clean:
-	rm main display draw matrix parser
+	rm main display draw gmath matrix parser
 	rm *.ppm
 	rm *.png
