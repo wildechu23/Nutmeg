@@ -1,5 +1,6 @@
 type
     Stack*[T] = seq[T]
+    StackEmpty* = object of CatchableError
 
 proc newStack*[T](): Stack[T] =
     newSeq[T](0)
@@ -18,13 +19,23 @@ proc pop*[T](s: Stack[T]): T =
         result = s[^1]
         s.setLen s.len - 1
     else:
-        # raise newException
+        raise newException(StackEmpty, "Cannot pop empty stack")
 
 proc peek*[T](s: Stack[T]): T =
     if not s.isEmpty:
         result = s[^1]
     else:
-        # raise newException
+        raise newException(StackEmpty, "Cannot peek empty stack")
 
-proc clear*[T](s: Stack[T]): seq[T] =
-    return
+proc clear*[T](s: var Stack[T]): =
+`   if not s.isEmpty:
+        s.setLen 0
+
+proc `$`*[T](s: Stack[T]): string =
+    result = "["
+    if not s.isEmpty:
+        for i in 0..s.high()-1:
+            result &= $s[s.high - i]
+            result &= ", "
+        result &= $s[0]
+    result &= "]"
