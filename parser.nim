@@ -16,6 +16,9 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
             addEdge(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]))
+            mul(cs[^1], edges)
+            drawLines(edges, s, c)
+            edges = newMatrix(0, 0)
         # of "ident":
         #     t.identMatrix()
         of "scale":
@@ -72,16 +75,25 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
             addCircle(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), 0.01)
+            mul(cs[^1], edges)
+            drawLines(edges, s, c)
+            edges = newMatrix(0, 0)
         of "hermite":
             let 
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
             addCurve(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]), parseFloat(arg[6]), parseFloat(arg[7]), 0.01, 'h')
+            mul(cs[^1], edges)
+            drawLines(edges, s, c)
+            edges = newMatrix(0, 0)
         of "bezier":
             let 
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
             addCurve(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]), parseFloat(arg[6]), parseFloat(arg[7]), 0.01, 'b')
+            mul(cs[^1], edges)
+            drawLines(edges, s, c)
+            edges = newMatrix(0, 0)
         # of "clear":
         #     edges = newMatrix(0, 0)
         #     polygons = newMatrix(0, 0)
