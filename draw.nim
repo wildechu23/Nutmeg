@@ -14,11 +14,10 @@ proc addEdge*(m: var Matrix, x0, y0, z0, x1, y1, z1: float) =
 
 
 proc addPolygon(m: var Matrix, x0, y0, z0, x1, y1, z1, x2, y2, z2: float) =
-    var p: Matrix = @[@[x0, y0, z0], @[x1, y1, z1], @[x2, y2, z2]]
-    mul(m, p)
-    m.addPoint p[0][0], p[0][1], p[0][2]
-    m.addPoint p[1][0], p[1][1], p[1][2]
-    m.addPoint p[2][0], p[2][1], p[2][2]
+    m.addPoint x0, y0, z0
+    m.addPoint x1, y1, z1
+    m.addPoint x2, y2, z2
+    # echo m
 
 proc addCircle*(m: var Matrix, cx, cy, cz, r, step: float) =
     var 
@@ -244,6 +243,7 @@ proc drawLines*(m: Matrix, s: var Screen, c: Color) =
         drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, c)
 
 proc drawPolygons*(m: var Matrix, s: var Screen, color: Color) =
+    # echo m
     for i in 0..<(m.len div 3):
         let
             a = m[3*i]

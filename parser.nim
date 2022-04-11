@@ -1,6 +1,11 @@
 import display, draw, matrix, stack, std/strutils, std/osproc, std/strformat
 
-proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix], s: var Screen) = 
+proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix], s: var Screen, ) = 
+    var c: Color
+    c.red = 255
+    c.green = 255
+    c.blue = 255
+    
     let f = open(path, fmRead)
     defer: f.close()
     var line: string
@@ -45,23 +50,17 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
         #     mul(t, edges)
         #     mul(t, polygons)
         of "display":
-            clearScreen(s)
             var c: Color
             c.red = 255
             c.green = 255
             c.blue = 255
-            drawLines(edges, s, c)
-            drawPolygons(polygons, s, c)
             savePpm(s, "img.ppm")
             let errC = execCmd("convert img.ppm img.png && display img.png")
         of "save":
-            clearScreen(s)
             var c: Color
             c.red = 255
             c.green = 255
             c.blue = 255
-            drawLines(edges, s, c)
-            drawPolygons(polygons, s, c)
             let 
                 nLine: string = f.readLine()
                 l: string = nLine[0 .. ^5]
@@ -91,16 +90,25 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
             addBox(polygons, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]))
+            mul(cs[^1], polygons)
+            drawPolygons(polygons, s, c)
+            polygons = newMatrix(0, 0)
         of "sphere":
             let 
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
             addSphere(polygons, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), 1)
+            mul(cs[^1], polygons)
+            drawPolygons(polygons, s, c)
+            polygons = newMatrix(0, 0)
         of "torus":
             let 
                 nextLine = f.readLine()
                 arg: seq[string] = nextLine.split(' ')
             addTorus(polygons, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), 1)
+            mul(cs[^1], polygons)
+            drawPolygons(polygons, s, c)
+            polygons = newMatrix(0, 0)
         of "push":
             cs.add(cs[^1])
         of "pop":

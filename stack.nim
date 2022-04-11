@@ -12,9 +12,6 @@ proc newStack*[T](): Stack[T] =
     s.add(m)
     s
 
-proc len*[T](s: Stack[T]): int =
-    s.len()
-
 proc isEmpty*[T](s: Stack[T]): bool =
     s.len() == 0
 
