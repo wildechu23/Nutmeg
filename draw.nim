@@ -14,9 +14,11 @@ proc addEdge*(m: var Matrix, x0, y0, z0, x1, y1, z1: float) =
 
 
 proc addPolygon(m: var Matrix, x0, y0, z0, x1, y1, z1, x2, y2, z2: float) =
-    m.addPoint x0, y0, z0
-    m.addPoint x1, y1, z1
-    m.addPoint x2, y2, z2
+    var p: Matrix = @[@[x0, y0, z0], @[x1, y1, z1], @[x2, y2, z2]]
+    mul(m, p)
+    m.addPoint p[0][0], p[0][1], p[0][2]
+    m.addPoint p[1][0], p[1][1], p[1][2]
+    m.addPoint p[2][0], p[2][1], p[2][2]
 
 proc addCircle*(m: var Matrix, cx, cy, cz, r, step: float) =
     var 

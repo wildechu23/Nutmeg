@@ -1,9 +1,16 @@
+import matrix
+
 type
     Stack*[T] = seq[T]
     StackEmpty* = object of CatchableError
 
 proc newStack*[T](): Stack[T] =
-    newSeq[T](0)
+    var 
+        s = newSeq[T](0)
+        m: Matrix = newMatrix()
+    identMatrix(m)
+    s.add(m)
+    s
 
 proc len*[T](s: Stack[T]): int =
     s.len()
@@ -11,10 +18,10 @@ proc len*[T](s: Stack[T]): int =
 proc isEmpty*[T](s: Stack[T]): bool =
     s.len() == 0
 
-proc push*[T](s: Stack[T], e: T) =
+proc push*[T](s: var Stack[T], e: T) =
     s.add(e)
 
-proc pop*[T](s: Stack[T]): T =
+proc pop*[T](s: var Stack[T]): T =
     if not s.isEmpty:
         result = s[^1]
         s.setLen s.len - 1
@@ -27,8 +34,8 @@ proc peek*[T](s: Stack[T]): T =
     else:
         raise newException(StackEmpty, "Cannot peek empty stack")
 
-proc clear*[T](s: var Stack[T]): =
-`   if not s.isEmpty:
+proc clear*[T](s: var Stack[T]) =
+    if not s.isEmpty:
         s.setLen 0
 
 proc `$`*[T](s: Stack[T]): string =
@@ -39,3 +46,6 @@ proc `$`*[T](s: Stack[T]): string =
             result &= ", "
         result &= $s[0]
     result &= "]"
+
+proc printStack*[T](s: Stack[T]) =
+    echo $s

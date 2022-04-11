@@ -1,6 +1,6 @@
 import std/math
 
-import display, draw, matrix, parser
+import display, draw, matrix, parser, stack
 
 proc main() =
     var 
@@ -8,17 +8,19 @@ proc main() =
         c: Color
         # m1: Matrix
         # m2: Matrix
-        t: Matrix
+        # t: Matrix
         edges: Matrix
         polygons: Matrix
+        cs: Stack[Matrix]
     c.red = 255
     c.green = 255
     c.blue = 255
 
-    t = newMatrix()
+    # t = newMatrix()
+    cs = newStack[Matrix]()
     edges = newMatrix(0, 0)
     polygons = newMatrix(0,0)
     
-    parseFile("script", t, edges, polygons, s)
+    parseFile("script", edges, polygons, cs, s)
 
 main()
