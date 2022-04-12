@@ -122,7 +122,7 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
             drawPolygons(polygons, s, c)
             polygons = newMatrix(0, 0)
         of "push":
-            cs.add(cs[^1])
+            cs.push(cs[^1])
         of "pop":
             discard cs.pop
         else:

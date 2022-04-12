@@ -21,13 +21,16 @@ proc identMatrix*(m: var Matrix) =
             else:
                 m[i][j] = 0
 
-proc printMatrix*(m: Matrix) =
+proc `$`*(m: Matrix): string =
     for i in 0..<len(m[0]):
-        for j in 0..<len(m):
-            stdout.write m[j][i]
-            if j < len(m)-1:
-                stdout.write " "
-        stdout.write "\n"
+        for j in 0..<len(m)-1:
+            result &= $m[j][i]
+            result &= " "
+        result &= $m[len(m)-1][i]
+        result &= "\n"
+
+proc printMatrix*(m: Matrix) =
+    echo $m
 
 
 proc mul*(a: Matrix, b: var Matrix) = 
