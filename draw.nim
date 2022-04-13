@@ -159,8 +159,11 @@ proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
         addPolygon(m, p[j][0], p[j][1], p[j][2], p[j-i][0], p[j-i][1], p[j-i][2], p[j-i+1][0], p[j-i+1][1], p[j-i+1][2])
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[0][0], p[0][1], p[0][2], p[i][0], p[i][1], p[i][2])
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[n-1][0], p[n-1][1], p[n-1][2], p[0][0], p[0][1], p[0][2])
-        
-proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
+
+proc scanLine(m: Matrix, i: int, s: Screen, zb: ZBuffer) =
+    discard
+
+proc diagLine(x0, y0, x1, y1: int, s: var Screen, zb: ZBuffer, c: Color) =
     let
         a: int = 2*(y1 - y0) # A
         b: int = 2*(x1 - x0) # -B
@@ -175,7 +178,7 @@ proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
             # octant 1
             D = a - (x1 - x0) # 2dy - dx
             while x <= x1:
-                plot(s, c, x, y)
+                plot(s, zb, c, x, y)
                 if D > 0:
                     inc y
                     D -= b
@@ -185,7 +188,7 @@ proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
             # octant 8
             D = a - (x1 - x0) # 2dy - dx
             while x <= x1:
-                plot(s, c, x, y)
+                plot(s, zb, c, x, y)
                 if D > 0:
                     dec y
                     D -= b
@@ -196,7 +199,7 @@ proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
             # octant 2
             D = b - (y1 - y0) # 2dx - dy
             while y <= y1:
-                plot(s, c, x, y)
+                plot(s, zb, c, x, y)
                 if D > 0:
                     inc x
                     D -= a
@@ -206,34 +209,34 @@ proc diagLine(x0, y0, x1, y1: int, s: var Screen, c: Color) =
             # octant 7
             D = b - (y0 - y1) # 2dy - dx
             while y >= y1:
-                plot(s, c, x, y)
+                plot(s, zb, c, x, y)
                 if D > 0:
                     inc x
                     D += a
                 dec y
                 D += b
 
-proc drawLine*(x0, y0, x1, y1: int, s: var Screen, c: Color) =
+proc drawLine*(x0, y0, x1, y1: int, s: var Screen, zb: ZBuffer, c: Color) =
     if x0 == x1:
         if y1 > y0:
             for y in y0..y1:
-                plot(s, c, x0, y)
+                plot(s, zb, c, x0, y)
         else:
             for y in y1..y0:
-                plot(s, c, x0, y)
+                plot(s, zb, c, x0, y)
 
     elif y0 == y1:
         if x1 > x0:
             for x in x0..x1:
-                plot(s, c, x, y0)
+                plot(s, zb, c, x, y0)
         else:
             for x in x1..x0:
-                plot(s, c, x, y0)
+                plot(s, zb, c, x, y0)
     else:
         if x1 > x0:
-            diagLine(x0, y0, x1, y1, s, c)
+            diagLine(x0, y0, x1, y1, s, zb, c)
         else:
-            diagLine(x1, y1, x0, y0, s, c)
+            diagLine(x1, y1, x0, y0, s, zb, c)
 
 proc drawLines*(m: Matrix, s: var Screen, c: Color) =
     for i in 0..<(len(m) div 2):
@@ -242,7 +245,7 @@ proc drawLines*(m: Matrix, s: var Screen, c: Color) =
             b = m[2*i + 1]
         drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, c)
 
-proc drawPolygons*(m: var Matrix, s: var Screen, color: Color) =
+proc drawPolygons*(m: var Matrix, s: var Screen, zb: ZBuffer, color: Color) =
     # echo m
     for i in 0..<(m.len div 3):
         let
@@ -251,6 +254,6 @@ proc drawPolygons*(m: var Matrix, s: var Screen, color: Color) =
             c = m[3*i + 2]
             n = calculateNormal(m, 3*i)
         if dotProduct(n, (0.0, 0.0, 1.0)) > 0:
-            drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, color)
-            drawLine(int(b[0]), int(b[1]), int(c[0]), int(c[1]), s, color)
-            drawLine(int(c[0]), int(c[1]), int(a[0]), int(a[1]), s, color)
+            drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, zb, color)
+            drawLine(int(b[0]), int(b[1]), int(c[0]), int(c[1]), s, zb, color)
+            drawLine(int(c[0]), int(c[1]), int(a[0]), int(a[1]), s, zb, color)
