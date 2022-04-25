@@ -1,6 +1,6 @@
 import display, draw, matrix, stack, std/strutils, std/osproc, std/strformat
 
-proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix], s: var Screen, ) = 
+proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix], s: var Screen, zb: ZBuffer) = 
     var c: Color
     c.red = 255
     c.green = 255
@@ -17,7 +17,7 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
                 arg: seq[string] = nextLine.split(' ')
             addEdge(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]))
             mul(cs[^1], edges)
-            drawLines(edges, s, c)
+            drawLines(edges, s, zb, c)
             edges = newMatrix(0, 0)
         # of "ident":
         #     t.identMatrix()
@@ -76,7 +76,7 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
                 arg: seq[string] = nextLine.split(' ')
             addCircle(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), 0.01)
             mul(cs[^1], edges)
-            drawLines(edges, s, c)
+            drawLines(edges, s, zb, c)
             edges = newMatrix(0, 0)
         of "hermite":
             let 
@@ -84,7 +84,7 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
                 arg: seq[string] = nextLine.split(' ')
             addCurve(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]), parseFloat(arg[6]), parseFloat(arg[7]), 0.01, 'h')
             mul(cs[^1], edges)
-            drawLines(edges, s, c)
+            drawLines(edges, s, zb, c)
             edges = newMatrix(0, 0)
         of "bezier":
             let 
@@ -92,7 +92,7 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
                 arg: seq[string] = nextLine.split(' ')
             addCurve(edges, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]), parseFloat(arg[6]), parseFloat(arg[7]), 0.01, 'b')
             mul(cs[^1], edges)
-            drawLines(edges, s, c)
+            drawLines(edges, s, zb, c)
             edges = newMatrix(0, 0)
         # of "clear":
         #     edges = newMatrix(0, 0)
@@ -103,7 +103,7 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
                 arg: seq[string] = nextLine.split(' ')
             addBox(polygons, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]))
             mul(cs[^1], polygons)
-            drawPolygons(polygons, s, c)
+            drawPolygons(polygons, s, zb, c)
             polygons = newMatrix(0, 0)
         of "sphere":
             let 
@@ -111,7 +111,7 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
                 arg: seq[string] = nextLine.split(' ')
             addSphere(polygons, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), 1)
             mul(cs[^1], polygons)
-            drawPolygons(polygons, s, c)
+            drawPolygons(polygons, s, zb, c)
             polygons = newMatrix(0, 0)
         of "torus":
             let 
@@ -119,7 +119,7 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
                 arg: seq[string] = nextLine.split(' ')
             addTorus(polygons, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), 1)
             mul(cs[^1], polygons)
-            drawPolygons(polygons, s, c)
+            drawPolygons(polygons, s, zb, c)
             polygons = newMatrix(0, 0)
         of "push":
             cs.push(cs[^1])

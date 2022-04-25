@@ -1,4 +1,4 @@
-import display, gmath, matrix, std/math
+import display, gmath, matrix, std/algorithm, std/math, std/random
 
 proc addPoint*(m: var Matrix, x, y, z: float) =
     m.add newSeq[float](4)
@@ -160,9 +160,6 @@ proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[0][0], p[0][1], p[0][2], p[i][0], p[i][1], p[i][2])
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[n-1][0], p[n-1][1], p[n-1][2], p[0][0], p[0][1], p[0][2])
 
-proc scanLine(m: Matrix, i: int, s: Screen, zb: ZBuffer) =
-    discard
-
 proc diagLine(x0, y0, x1, y1: int, s: var Screen, zb: ZBuffer, c: Color) =
     let
         a: int = 2*(y1 - y0) # A
@@ -224,7 +221,6 @@ proc drawLine*(x0, y0, x1, y1: int, s: var Screen, zb: ZBuffer, c: Color) =
         else:
             for y in y1..y0:
                 plot(s, zb, c, x0, y)
-
     elif y0 == y1:
         if x1 > x0:
             for x in x0..x1:
@@ -238,12 +234,60 @@ proc drawLine*(x0, y0, x1, y1: int, s: var Screen, zb: ZBuffer, c: Color) =
         else:
             diagLine(x1, y1, x0, y0, s, zb, c)
 
-proc drawLines*(m: Matrix, s: var Screen, c: Color) =
+proc drawLines*(m: Matrix, s: var Screen, zb: ZBuffer, c: Color) =
     for i in 0..<(len(m) div 2):
         let
             a = m[2*i]
             b = m[2*i + 1]
-        drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, c)
+        drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, zb, c)
+
+proc cmpY(p, q: seq[float]): int =
+    cmp(p[1], q[1])
+
+proc scanLine(m: Matrix, i: int, s: var Screen, zb: ZBuffer) =
+    var 
+        p: Matrix = m[3*i .. 3*i + 2]
+        c: Color
+        
+    p.sort(cmpY)
+    c.red = uint8(rand(255))
+    c.green = uint8(rand(255))
+    c.blue = uint8(rand(255))
+    # bottom: p[0], middle: p[1], top: p[2]
+    var
+        x0 = p[0][0]
+        x1 = p[0][0]
+        y: float32 = p[0][1]
+        dx0 = (p[2][0] - p[0][0]) / (p[2][1] - p[0][1])
+        dx1, dx11: float
+
+    if p[2][1] == p[1][1]: 
+        dx1 = (p[1][0] - p[0][0]) / (p[1][1] - p[0][1])
+        # dx11 = (p[2][0] - p[1][0]) / (p[2][1] - p[1][1])
+    elif p[0][1] == p[1][1]:
+        x1 = p[1][0]
+        # dx1 = (p[1][0] - p[0][0]) / (p[1][1] - p[0][1])
+        dx11 = (p[2][0] - p[1][0]) / (p[2][1] - p[1][1])
+        dx1 = dx11
+    else:
+        dx1 = (p[1][0] - p[0][0]) / (p[1][1] - p[0][1])
+        dx11 = (p[2][0] - p[1][0]) / (p[2][1] - p[1][1])m
+            
+    while y <= (p[2][1]):
+        # if y > 255 and y < 257 and x0 < 200:
+        #     echo y
+        #     echo "x0: " & $x0 & ", x1: " & $x1
+        #     drawLine(int(x0), 256, int(x1), 256, s, zb, c)
+        # if int(y) == 256 and x0 < 200:
+        #     echo "y is 256"
+
+        drawLine(int(x0), int(y), int(x1), int(y), s, zb, c)
+        x0 += dx0
+        x1 += dx1
+        y += 1
+        if dx1 != dx11 and y >= (p[1][1]) :
+            dx1 = dx11
+            x1 = p[1][0]
 
 proc drawPolygons*(m: var Matrix, s: var Screen, zb: ZBuffer, color: Color) =
     # echo m
@@ -254,6 +298,7 @@ proc drawPolygons*(m: var Matrix, s: var Screen, zb: ZBuffer, color: Color) =
             c = m[3*i + 2]
             n = calculateNormal(m, 3*i)
         if dotProduct(n, (0.0, 0.0, 1.0)) > 0:
-            drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, zb, color)
-            drawLine(int(b[0]), int(b[1]), int(c[0]), int(c[1]), s, zb, color)
-            drawLine(int(c[0]), int(c[1]), int(a[0]), int(a[1]), s, zb, color)
+            # drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, zb, color)
+            # drawLine(int(b[0]), int(b[1]), int(c[0]), int(c[1]), s, zb, color)
+            # drawLine(int(c[0]), int(c[1]), int(a[0]), int(a[1]), s, zb, color)
+            scanLine(m, i, s, zb)

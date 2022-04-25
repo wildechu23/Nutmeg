@@ -1,8 +1,10 @@
 import std/math
 
-import display, draw, matrix, parser, stack
+import display, draw, matrix, parser, stack, std/random
 
 proc main() =
+    randomize()
+
     var 
         s: Screen[XRES, YRES]
         c: Color
@@ -12,6 +14,7 @@ proc main() =
         edges: Matrix
         polygons: Matrix
         cs: Stack[Matrix]
+        zb: ZBuffer[XRES, YRES]
     c.red = 255
     c.green = 255
     c.blue = 255
@@ -19,8 +22,8 @@ proc main() =
     # t = newMatrix()
     cs = newStack[Matrix]()
     edges = newMatrix(0, 0)
-    polygons = newMatrix(0,0)
+    polygons = newMatrix(0, 0)
     
-    parseFile("script", edges, polygons, cs, s)
+    parseFile("script", edges, polygons, cs, s, zb)
 
 main()
