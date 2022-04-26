@@ -94,9 +94,11 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
             mul(cs[^1], edges)
             drawLines(edges, s, zb, c)
             edges = newMatrix(0, 0)
-        # of "clear":
+        of "clear":
         #     edges = newMatrix(0, 0)
         #     polygons = newMatrix(0, 0)
+            clearScreen(s)
+            clearZBuffer(zb)
         of "box":
             let 
                 nextLine = f.readLine()
