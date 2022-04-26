@@ -160,91 +160,111 @@ proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[0][0], p[0][1], p[0][2], p[i][0], p[i][1], p[i][2])
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[n-1][0], p[n-1][1], p[n-1][2], p[0][0], p[0][1], p[0][2])
 
-proc diagLine(x0, y0, x1, y1: int, s: var Screen, zb: ZBuffer, c: Color) =
+proc diagLine(x0, y0: int, z0: float, x1, y1: int, z1: float, s: var Screen, zb: var ZBuffer, c: Color) =
     let
         a: int = 2*(y1 - y0) # A
         b: int = 2*(x1 - x0) # -B
+        deltaZ: float = z1 - z0
 
     var
         x: int = x0
         y: int = y0
+        z: float = z0
         D: int
+        dz: float
         
     if abs(y1-y0) <= abs(x1-x0): # dy < dx
         if y1 > y0:
             # octant 1
             D = a - (x1 - x0) # 2dy - dx
+            dz = deltaZ / float(x1 - x0 + 1)
             while x <= x1:
-                plot(s, zb, c, x, y)
+                plot(s, zb, c, x, y, z)
                 if D > 0:
                     inc y
                     D -= b
                 inc x
                 D += a
+                z += dz
+            # echo "z: " & $z
+            # echo "z1: " & $z1
         else:
             # octant 8
             D = a - (x1 - x0) # 2dy - dx
+            dz = deltaZ / float(x1 - x0 + 1)
             while x <= x1:
-                plot(s, zb, c, x, y)
+                plot(s, zb, c, x, y, z)
                 if D > 0:
                     dec y
                     D -= b
                 inc x
                 D -= a
+                z += dz
     else:
         if y1 > y0:
             # octant 2
             D = b - (y1 - y0) # 2dx - dy
+            dz = deltaZ / float(y1 - y0 + 1)
             while y <= y1:
-                plot(s, zb, c, x, y)
+                plot(s, zb, c, x, y, z)
                 if D > 0:
                     inc x
                     D -= a
                 inc y
                 D += b
+                z += dz
         else:
             # octant 7
             D = b - (y0 - y1) # 2dy - dx
+            dz = deltaZ / float(y1 - y0 + 1)
             while y >= y1:
-                plot(s, zb, c, x, y)
+                plot(s, zb, c, x, y, z)
                 if D > 0:
                     inc x
                     D += a
                 dec y
                 D += b
+                z += dz
 
-proc drawLine*(x0, y0, x1, y1: int, s: var Screen, zb: ZBuffer, c: Color) =
+proc drawLine*(x0, y0: int, z0: float, x1, y1: int, z1: float, s: var Screen, zb: var ZBuffer, c: Color) =
+    var z, dz: float
     if x0 == x1:
+        dz = (z1 - z0) / float(y1 - y0)
         if y1 > y0:
+            z = z0
             for y in y0..y1:
-                plot(s, zb, c, x0, y)
+                plot(s, zb, c, x0, y, z + float(y - y0)*dz)
         else:
+            z = z1
             for y in y1..y0:
-                plot(s, zb, c, x0, y)
+                plot(s, zb, c, x0, y, z + float(y - y0)*dz)
     elif y0 == y1:
+        dz = (z1 - z0) / float(x1 - x0)
         if x1 > x0:
+            z = z0
             for x in x0..x1:
-                plot(s, zb, c, x, y0)
+                plot(s, zb, c, x, y0, z + float(x - x0)*dz)
         else:
+            z = z1
             for x in x1..x0:
-                plot(s, zb, c, x, y0)
+                plot(s, zb, c, x, y0, z + float(x - x0)*dz)
     else:
         if x1 > x0:
-            diagLine(x0, y0, x1, y1, s, zb, c)
+            diagLine(x0, y0, z0, x1, y1, z1, s, zb, c)
         else:
-            diagLine(x1, y1, x0, y0, s, zb, c)
+            diagLine(x1, y1, z1, x0, y0, z0, s, zb, c)
 
-proc drawLines*(m: Matrix, s: var Screen, zb: ZBuffer, c: Color) =
+proc drawLines*(m: Matrix, s: var Screen, zb: var ZBuffer, c: Color) =
     for i in 0..<(len(m) div 2):
         let
             a = m[2*i]
             b = m[2*i + 1]
-        drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, zb, c)
+        drawLine(int(a[0]), int(a[1]), a[2], int(b[0]), int(b[1]), b[2], s, zb, c)
 
 proc cmpY(p, q: seq[float]): int =
     cmp(p[1], q[1])
 
-proc scanLine(m: Matrix, i: int, s: var Screen, zb: ZBuffer) =
+proc scanLine(m: Matrix, i: int, s: var Screen, zb: var ZBuffer) =
     var 
         p: Matrix = m[3*i .. 3*i + 2]
         c: Color
@@ -254,42 +274,56 @@ proc scanLine(m: Matrix, i: int, s: var Screen, zb: ZBuffer) =
     c.green = uint8(rand(255))
     c.blue = uint8(rand(255))
     # bottom: p[0], middle: p[1], top: p[2]
+
     var
         x0 = p[0][0]
         x1 = p[0][0]
         y: float32 = p[0][1]
+        z0 = p[0][2]
+        z1 = p[0][2]
         dx0 = (p[2][0] - p[0][0]) / (p[2][1] - p[0][1])
         dx1, dx11: float
+        dz0 = (p[2][2] - p[0][2]) / (p[2][1] - p[0][1])
+        dz1, dz11: float
 
     if p[2][1] == p[1][1]: 
         dx1 = (p[1][0] - p[0][0]) / (p[1][1] - p[0][1])
         # dx11 = (p[2][0] - p[1][0]) / (p[2][1] - p[1][1])
+        dz1 = (p[1][2] - p[0][2]) / (p[1][1] - p[0][1])
     elif p[0][1] == p[1][1]:
         x1 = p[1][0]
+        z1 = p[1][2]
         # dx1 = (p[1][0] - p[0][0]) / (p[1][1] - p[0][1])
         dx11 = (p[2][0] - p[1][0]) / (p[2][1] - p[1][1])
         dx1 = dx11
+        dz11 = (p[2][2] - p[1][2]) / (p[2][1] - p[1][1])
+        dz1 = dz11
+
+        # echo "z0: " & $z0
+        # echo "z1: " & $z1
+        # echo "dz1: " & $dz1
     else:
         dx1 = (p[1][0] - p[0][0]) / (p[1][1] - p[0][1])
-        dx11 = (p[2][0] - p[1][0]) / (p[2][1] - p[1][1])m
+        dx11 = (p[2][0] - p[1][0]) / (p[2][1] - p[1][1])
+        
+        dz1 = (p[1][2] - p[0][2]) / (p[1][1] - p[0][1])
+        dz11 = (p[2][2] - p[1][2]) / (p[2][1] - p[1][1])
             
-    while y <= (p[2][1]):
-        # if y > 255 and y < 257 and x0 < 200:
-        #     echo y
-        #     echo "x0: " & $x0 & ", x1: " & $x1
-        #     drawLine(int(x0), 256, int(x1), 256, s, zb, c)
-        # if int(y) == 256 and x0 < 200:
-        #     echo "y is 256"
-
-        drawLine(int(x0), int(y), int(x1), int(y), s, zb, c)
+    while y <= p[2][1]:
+        drawLine(int(x0), int(y), z0, int(x1), int(y), z1, s, zb, c)
         x0 += dx0
         x1 += dx1
+        z0 += dz0
+        z1 += dz1
         y += 1
-        if dx1 != dx11 and y >= (p[1][1]) :
+        if dx1 != dx11 and y >= p[1][1]:
             dx1 = dx11
+            dz1 = dz11
             x1 = p[1][0]
+            z1 = p[1][2]
+        # echo "z0: " & $z0 & ", z1: " & $z1 
 
-proc drawPolygons*(m: var Matrix, s: var Screen, zb: ZBuffer, color: Color) =
+proc drawPolygons*(m: var Matrix, s: var Screen, zb: var ZBuffer, color: Color) =
     # echo m
     for i in 0..<(m.len div 3):
         let
@@ -298,7 +332,7 @@ proc drawPolygons*(m: var Matrix, s: var Screen, zb: ZBuffer, color: Color) =
             c = m[3*i + 2]
             n = calculateNormal(m, 3*i)
         if dotProduct(n, (0.0, 0.0, 1.0)) > 0:
-            # drawLine(int(a[0]), int(a[1]), int(b[0]), int(b[1]), s, zb, color)
-            # drawLine(int(b[0]), int(b[1]), int(c[0]), int(c[1]), s, zb, color)
-            # drawLine(int(c[0]), int(c[1]), int(a[0]), int(a[1]), s, zb, color)
+            # drawLine(int(a[0]), int(a[1]), a[2], int(b[0]), int(b[1]), b[2], s, zb, color)
+            # drawLine(int(b[0]), int(b[1]), b[2], int(c[0]), int(c[1]), c[2], s, zb, color)
+            # drawLine(int(c[0]), int(c[1]), c[2], int(a[0]), int(a[1]), a[2], s, zb, color)
             scanLine(m, i, s, zb)

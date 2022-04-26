@@ -11,16 +11,25 @@ const
     DEFAULT_COLOR*: uint8 = 0
     MAX_COLOR*: int = 255
 
-proc plot*(s: var Screen[XRES, YRES], zb: ZBuffer, c: Color, x, y: int) = 
+proc plot*(s: var Screen[XRES, YRES], zb: var ZBuffer, c: Color, x, y: int, z: float) = 
     let ny = YRES - 1 - y
-    if x >= 0 and x < XRES and ny >= 0 and ny < YRES:
+    if x >= 0 and x < XRES and ny >= 0 and ny < YRES and z > zb[x][ny]:
+    # if x >= 0 and x < XRES and ny >= 0 and ny < YRES:
         s[x][ny] = c
+        # if zb[x][ny] != NegInf:
+        #     echo $x & ", " & $ny
+        zb[x][ny] = z
 
 proc clearScreen*(s: var Screen) =
     let c: Color = (red: DEFAULT_COLOR, green: DEFAULT_COLOR, blue: DEFAULT_COLOR)
     for y in 0..<YRES:
         for x in 0..<XRES:
             s[x][y] = c
+
+proc clearZBuffer*(zb: var ZBuffer) =
+    for y in 0..<YRES:
+        for x in 0..<XRES:
+            zb[x][y] = NegInf
 
 proc saveAsciiPpm*(s: Screen, path: string) =
     let f = open(path, fmWrite)

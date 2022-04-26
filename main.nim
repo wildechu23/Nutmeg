@@ -23,7 +23,12 @@ proc main() =
     cs = newStack[Matrix]()
     edges = newMatrix(0, 0)
     polygons = newMatrix(0, 0)
+    clearZBuffer(zb)
     
     parseFile("script", edges, polygons, cs, s, zb)
+    # for y in 0..<YRES:
+    #     for x in 0..<XRES:
+    #         stdout.write $zb[x][y] & " "
+    #     stdout.write "\n"
 
 main()

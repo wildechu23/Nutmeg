@@ -1,6 +1,6 @@
 import display, draw, matrix, stack, std/strutils, std/osproc, std/strformat
 
-proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix], s: var Screen, zb: ZBuffer) = 
+proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer) = 
     var c: Color
     c.red = 255
     c.green = 255
