@@ -317,7 +317,7 @@ proc scanLine(m: Matrix, i: int, s: var Screen, zb: var ZBuffer) =
             z1 = p[1][2]
         # echo "z0: " & $z0 & ", z1: " & $z1 
 
-proc drawPolygons*(m: var Matrix, s: var Screen, zb: var ZBuffer, color: Color) =
+proc drawPolygons*(m: var Matrix, s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     # echo m
     for i in 0..<(m.len div 3):
         let

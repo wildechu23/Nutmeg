@@ -7,17 +7,30 @@ proc main() =
 
     var 
         s: Screen[XRES, YRES]
-        c: Color
+        ambient: Color
         # m1: Matrix
         # m2: Matrix
         # t: Matrix
-        edges: Matrix
-        polygons: Matrix
+        edges, polygons, light: Matrix
         cs: Stack[Matrix]
         zb: ZBuffer[XRES, YRES]
-    c.red = 255
-    c.green = 255
-    c.blue = 255
+        view: tuple =  (0.0, 0.0, 1.0)
+        areflect: tuple = (0.1, 0.1, 0.1)
+        dreflect: tuple = (0.5, 0.5, 0.5)
+        sreflect: tuple = (0.5, 0.5, 0.5)
+        
+    ambient.red = 50
+    ambient.green = 50
+    ambient.blue = 50
+
+    light = newMatrix(2, 3)
+    light[0][0] = 0.5
+    light[0][1] = 0.75
+    light[0][2] = 1
+
+    light[1][0] = 0
+    light[1][1] = 255
+    light[1][2] = 255
 
     # t = newMatrix()
     cs = newStack[Matrix]()
@@ -25,7 +38,7 @@ proc main() =
     polygons = newMatrix(0, 0)
     clearZBuffer(zb)
     
-    parseFile("script", edges, polygons, cs, s, zb)
+    parseFile("script", edges, polygons, cs, s, zb, view, ambient, light, areflect, dreflect, sreflect)
     # for y in 0..<YRES:
     #     for x in 0..<XRES:
     #         stdout.write $zb[x][y] & " "

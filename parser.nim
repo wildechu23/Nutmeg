@@ -1,6 +1,6 @@
 import display, draw, matrix, stack, std/strutils, std/osproc, std/strformat
 
-proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer) = 
+proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, view: tuple, ambient: Color, light: Matrix, areflect, dreflect, sreflect: tuple) = 
     var c: Color
     c.red = 255
     c.green = 255
@@ -105,7 +105,7 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
                 arg: seq[string] = nextLine.split(' ')
             addBox(polygons, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), parseFloat(arg[5]))
             mul(cs[^1], polygons)
-            drawPolygons(polygons, s, zb, c)
+            drawPolygons(polygons, s, zb, c, view, light, ambient, areflect, dreflect, sreflect)
             polygons = newMatrix(0, 0)
         of "sphere":
             let 
@@ -113,7 +113,7 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
                 arg: seq[string] = nextLine.split(' ')
             addSphere(polygons, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), 1)
             mul(cs[^1], polygons)
-            drawPolygons(polygons, s, zb, c)
+            drawPolygons(polygons, s, zb, c, view, light, ambient, areflect, dreflect, sreflect)
             polygons = newMatrix(0, 0)
         of "torus":
             let 
@@ -121,7 +121,7 @@ proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix]
                 arg: seq[string] = nextLine.split(' ')
             addTorus(polygons, parseFloat(arg[0]), parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3]), parseFloat(arg[4]), 1)
             mul(cs[^1], polygons)
-            drawPolygons(polygons, s, zb, c)
+            drawPolygons(polygons, s, zb, c, view, light, ambient, areflect, dreflect, sreflect)
             polygons = newMatrix(0, 0)
         of "push":
             cs.push(cs[^1])
