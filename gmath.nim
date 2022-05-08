@@ -1,12 +1,30 @@
 import display, matrix, std/math
 
-proc normalize(v: var tuple) =
+proc normalize(v: tuple): tuple =
     let magnitude: float = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
-    for i in v:
-        i /= magnitude
+    var r: tuple = (0.0, 0.0, 0.0)
+    r[0] = v[0] / magnitude
+    r[1] = v[1] / magnitude
+    r[2] = v[2] / magnitude
+    return r
 
 proc dotProduct*(a, b: tuple): float =
     a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+
+proc subtract(t, u: tuple): tuple =
+    var r: tuple = (0.0, 0.0, 0.0)
+    r[0] = t[0] - u[0]  
+    r[1] = t[1] - u[1]
+    r[2] = t[2] - u[2]
+    return r
+
+proc scale(t: tuple, f: float): tuple =
+    var r: tuple = (0.0, 0.0, 0.0)
+    r[0] = t[0] * f    
+    r[1] = t[1] * f
+    r[2] = t[2] * f
+    return r
+
 
 proc calculateNormal*(m: Matrix, i: int): tuple =
     let
@@ -18,22 +36,32 @@ proc calculateNormal*(m: Matrix, i: int): tuple =
     (a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0])
 
 proc calculateAmbient(alight: Color, areflect: tuple): Color =
-    result.red = alight.red * areflect[0]
-    result.green = alight.green * areflect[1]
-    result.blue = alight.blue * areflect[2]
+    result.red = int(float(alight.red) * areflect[0]).clamp(0, 255)
+    result.green = int(float(alight.green) * areflect[1]).clamp(0, 255)
+    result.blue = int(float(alight.blue) * areflect[2]).clamp(0, 255)
 
-proc calculateDiffuse(light: Matrix, dreflect, normal: tuple): Color =
+proc calculateDiffuse(light: Matrix, dreflect: tuple, normal: tuple): Color =
+    var 
+        n: tuple = normalize(normal)
+        l: tuple = normalize((light[0][0], light[0][1], light[0][2]))
+        d: float = dotProduct(n, l)
+    result.red = int(light[1][0] * dreflect[0] * d).clamp(0, 255)
+    result.green = int(light[1][1] * dreflect[1] * d).clamp(0, 255)
+    result.blue = int(light[1][2] * dreflect[2] * d).clamp(0, 255)
+
+proc calculateSpecular(light: Matrix, sreflect: tuple, view, normal: tuple): Color =
+    var 
+        n: tuple = normalize(normal)
+        l: tuple = normalize((light[0][0], light[0][1], light[0][2]))
+        v: tuple = normalize(view)
+        d: float = dotProduct(subtract(scale(scale(n, 2), dotProduct(n, l)), l), v)
+    result.red = int(light[1][0] * sreflect[0] * d).clamp(0, 255)
+    result.green = int(light[1][1] * sreflect[1] * d).clamp(0, 255)
+    result.blue = int(light[1][2] * sreflect[2] * d).clamp(0, 255)
+
+proc getLighting*(normal, view: tuple, alight: Color, light: Matrix, areflect, dreflect, sreflect: tuple): Color =
     let 
-        n: tuple = normal
-        l: tuple = (light[0][0], light[0][1], light[0][2])
-    normalize(n)
-    normalize(l)
-    result.red = light[1][0] * dreflect[0] * dotProduct(normal, l)
-    result.green = light[1][1] * dreflect[1] * dotProduct(normal, l)
-    result.blue = light[1][2] * dreflect[2] * dotProduct(normal, l)
-
-proc calculateSpecular(light: Matrix, sreflect, view, normal: tuple): Color =
-    discard
-
-proc getLighting(normal, view: tuple, alight: Color, light: Matrix, areflect, dreflect, sreflect: tuple): Color =
-    discard
+        a = calculateAmbient(alight, areflect)
+        d = calculateDiffuse(light, dreflect, normal)
+        s = calculateSpecular(light, sreflect, view, normal)
+    (a + d + s).clamp(0, 255)

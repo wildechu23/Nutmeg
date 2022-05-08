@@ -36,6 +36,7 @@ proc main() =
     cs = newStack[Matrix]()
     edges = newMatrix(0, 0)
     polygons = newMatrix(0, 0)
+    clearScreen(s)
     clearZBuffer(zb)
     
     parseFile("script", edges, polygons, cs, s, zb, view, ambient, light, areflect, dreflect, sreflect)

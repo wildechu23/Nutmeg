@@ -264,15 +264,11 @@ proc drawLines*(m: Matrix, s: var Screen, zb: var ZBuffer, c: Color) =
 proc cmpY(p, q: seq[float]): int =
     cmp(p[1], q[1])
 
-proc scanLine(m: Matrix, i: int, s: var Screen, zb: var ZBuffer) =
+proc scanLine(m: Matrix, i: int, s: var Screen, zb: var ZBuffer, c: Color) =
     var 
         p: Matrix = m[3*i .. 3*i + 2]
-        c: Color
         
     p.sort(cmpY)
-    c.red = uint8(rand(255))
-    c.green = uint8(rand(255))
-    c.blue = uint8(rand(255))
     # bottom: p[0], middle: p[1], top: p[2]
 
     var
@@ -329,4 +325,5 @@ proc drawPolygons*(m: var Matrix, s: var Screen, zb: var ZBuffer, color: Color, 
             # drawLine(int(a[0]), int(a[1]), a[2], int(b[0]), int(b[1]), b[2], s, zb, color)
             # drawLine(int(b[0]), int(b[1]), b[2], int(c[0]), int(c[1]), c[2], s, zb, color)
             # drawLine(int(c[0]), int(c[1]), c[2], int(a[0]), int(a[1]), a[2], s, zb, color)
-            scanLine(m, i, s, zb)
+            let il: Color = getLighting(n, view, ambient, light, areflect, dreflect, sreflect)
+            scanLine(m, i, s, zb, il)

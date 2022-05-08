@@ -1,15 +1,20 @@
 import std/strformat
 
 type
-    Color* = tuple[red, green, blue: uint8]
+    Color* = tuple[red, green, blue: int]
     Screen*[XRES, YRES: static[int]] = array[XRES, array[YRES, Color]]
     ZBuffer*[XRES, YRES: static[int]] = array[XRES, array[YRES, float]]
 
 const
     XRES*: int = 500
     YRES*: int = 500
-    DEFAULT_COLOR*: uint8 = 0
+    DEFAULT_COLOR*: int = 255
     MAX_COLOR*: int = 255
+
+proc `+`*(a, b: Color): Color =
+    result.red = a.red + b.red
+    result.green = a.green + b.green
+    result.blue = a.blue + b.blue
 
 proc plot*(s: var Screen[XRES, YRES], zb: var ZBuffer, c: Color, x, y: int, z: float) = 
     let ny = YRES - 1 - y
