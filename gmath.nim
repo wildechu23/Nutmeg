@@ -64,4 +64,6 @@ proc getLighting*(normal, view: tuple, alight: Color, light: Matrix, areflect, d
         a = calculateAmbient(alight, areflect)
         d = calculateDiffuse(light, dreflect, normal)
         s = calculateSpecular(light, sreflect, view, normal)
-    (a + d + s).clamp(0, 255)
+    var c = a + d + s
+    clampColor(c)
+    c

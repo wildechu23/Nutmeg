@@ -264,9 +264,33 @@ proc drawLines*(m: Matrix, s: var Screen, zb: var ZBuffer, c: Color) =
 proc cmpY(p, q: seq[float]): int =
     cmp(p[1], q[1])
 
+proc drawScanline(x0: int, z0: float, x1: int, z1: float, y: int, s: var Screen, zbuffer: var ZBuffer, c: Color) =
+    var 
+        xa: int
+        xb: int
+        za: float
+        zb: float
+        z: float
+    if x0 > x1:
+        xa = x1
+        xb = x0
+        za = z1
+        zb = z0
+    else:
+        xa = x0
+        xb = x1
+        za = z0
+        zb = z1
+    let dz: float = (if (xb - xa) != 0: (zb - za) / float(xb - xa + 1) else: 0)
+    z = za
+    for x in xa..xb:
+        plot(s, zbuffer, c, x, y, z)
+        z += dz
+
 proc scanLine(m: Matrix, i: int, s: var Screen, zb: var ZBuffer, c: Color) =
     var 
         p: Matrix = m[3*i .. 3*i + 2]
+        flip = 0
         
     p.sort(cmpY)
     # bottom: p[0], middle: p[1], top: p[2]
@@ -274,44 +298,35 @@ proc scanLine(m: Matrix, i: int, s: var Screen, zb: var ZBuffer, c: Color) =
     var
         x0 = p[0][0]
         x1 = p[0][0]
-        y: float32 = p[0][1]
         z0 = p[0][2]
         z1 = p[0][2]
-        dx0 = (p[2][0] - p[0][0]) / (p[2][1] - p[0][1])
-        dx1, dx11: float
-        dz0 = (p[2][2] - p[0][2]) / (p[2][1] - p[0][1])
-        dz1, dz11: float
+        y: int = int(p[0][1])
 
-    if p[2][1] == p[1][1]: 
-        dx1 = (p[1][0] - p[0][0]) / (p[1][1] - p[0][1])
-        dz1 = (p[1][2] - p[0][2]) / (p[1][1] - p[0][1])
-    elif p[0][1] == p[1][1]:
-        x1 = p[1][0]
-        z1 = p[1][2]
-        dx11 = (p[2][0] - p[1][0]) / (p[2][1] - p[1][1])
-        dx1 = dx11
-        dz11 = (p[2][2] - p[1][2]) / (p[2][1] - p[1][1])
-        dz1 = dz11
-    else:
-        dx1 = (p[1][0] - p[0][0]) / (p[1][1] - p[0][1])
-        dx11 = (p[2][0] - p[1][0]) / (p[2][1] - p[1][1])
-        
-        dz1 = (p[1][2] - p[0][2]) / (p[1][1] - p[0][1])
-        dz11 = (p[2][2] - p[1][2]) / (p[2][1] - p[1][1])
-            
-    while y <= p[2][1]:
-        drawLine(int(x0), int(y), z0, int(x1), int(y), z1, s, zb, c)
+    let
+        dist0 = int(p[2][1]) - y + 1
+        dist1 = int(p[1][1]) - y + 1
+        dist2 = int(p[2][1]) - int(p[1][1]) + 1
+
+        dx0 = (if dist0 > 0: (p[2][0] - p[0][0]) / float(dist0) else: 0)
+        dz0 = (if dist0 > 0: (p[2][2] - p[0][2]) / float(dist0) else: 0)
+
+    var
+        dx1 = (if dist1 > 0: (p[1][0] - p[0][0]) / float(dist1) else: 0)
+        dz1 = (if dist1 > 0: (p[1][2] - p[0][2]) / float(dist1) else: 0)
+
+    while y <= int(p[2][1]):
+        if flip == 0 and y >= int(p[1][1]):
+            flip = 1
+            dx1 = (if dist2 > 0: (p[2][0] - p[1][0]) / float(dist2) else: 0)
+            dz1 = (if dist2 > 0: (p[2][2] - p[1][2]) / float(dist2) else: 0)
+            x1 = p[1][0]
+            z1 = p[1][2]
+        drawScanline(int(x0), z0, int(x1), z1, y, s, zb, c)
         x0 += dx0
         x1 += dx1
         z0 += dz0
         z1 += dz1
         y += 1
-        if dx1 != dx11 and y >= p[1][1]:
-            dx1 = dx11
-            dz1 = dz11
-            x1 = p[1][0]
-            z1 = p[1][2]
-        # echo "z0: " & $z0 & ", z1: " & $z1 
 
 proc drawPolygons*(m: var Matrix, s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     # echo m

@@ -16,6 +16,11 @@ proc `+`*(a, b: Color): Color =
     result.green = a.green + b.green
     result.blue = a.blue + b.blue
 
+proc clampColor*(c: var Color) =
+    c.red = (c.red).clamp(0, 255)
+    c.green = (c.green).clamp(0, 255)
+    c.blue = (c.blue).clamp(0, 255)
+
 proc plot*(s: var Screen[XRES, YRES], zb: var ZBuffer, c: Color, x, y: int, z: float) = 
     let ny = YRES - 1 - y
     if x >= 0 and x < XRES and ny >= 0 and ny < YRES and z > zb[x][ny]:
