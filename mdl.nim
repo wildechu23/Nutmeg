@@ -1,5 +1,7 @@
 import nimly, patty, strutils
 
+type Command = tuple[opcode: String, args: seq[float]]
+
 variantp Token:
     FLOAT
     COMMENT
@@ -108,9 +110,9 @@ niml Lexer[Token]:
         return STRING()
 
 nimy Parser[Token]:
-    top[Expr]:
+    top[seq[Command]]:
         state:
             return $1
-    # state[string]:
-    #     SPHERE FLOAT FLOAT FLOAT FLOAT:
-    #         return "
+    state[string]:
+        SPHERE FLOAT FLOAT FLOAT FLOAT:
+            
