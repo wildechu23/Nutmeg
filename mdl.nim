@@ -1,6 +1,10 @@
 import nimly, patty, strutils
 
-type Command = tuple[opcode: String, args: seq[float]]
+type
+    Light = object
+        p: SymTab
+        c: array[4, float]
+    Command = tuple[opcode: string, args: seq[float]]
 
 variantp Token:
     FLOAT
@@ -113,6 +117,6 @@ nimy Parser[Token]:
     top[seq[Command]]:
         state:
             return $1
-    state[string]:
+    state[Command]:
         SPHERE FLOAT FLOAT FLOAT FLOAT:
-            
+            return ("SPHERE", @[])
