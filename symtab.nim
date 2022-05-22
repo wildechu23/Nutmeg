@@ -1,11 +1,11 @@
 import matrix, std/strformat
 
 type
-    tKind = enum
-        tMatrix,
-        tConstants,
-        tLight,
-        tValue
+    symKind* = enum
+        symMatrix,
+        symConstants,
+        symLight,
+        symValue
 
     Constants = object
         r: array[4, float]
@@ -19,11 +19,11 @@ type
 
     SymTabObj* = object
         name: string
-        case kind: tKind
-        of tMatrix: m: Matrix
-        of tConstants: c: Constants
-        of tLight: l: Light
-        of tValue: value: float
+        case kind: symKind
+        of symMatrix: m: Matrix
+        of symConstants: c: Constants
+        of symLight: l: Light
+        of symValue: value: float
 
     SymTab* = ref SymTabObj
 
@@ -39,13 +39,13 @@ proc printLight*(p: Light) =
 proc printSymTab*(p: seq[SymTab]) =
     for i in p:
         case i.kind:
-        of tMatrix:
+        of symMatrix:
             printMatrix(i.m)
-        of tConstants:
+        of symConstants:
             printConstants(i.c)
-        of tLight:
+        of symLight:
             printLight(i.l)
-        of tValue:
+        of symValue:
             echo i.value
 
 proc lookupSymbol*(p: seq[SymTab], name: string): SymTab =
@@ -54,23 +54,24 @@ proc lookupSymbol*(p: seq[SymTab], name: string): SymTab =
             return i
     return nil
 
-proc addSymbol*(p: var seq[SymTab], name: string, kind: tKind, data: pointer) = 
+proc addSymbol*(p: var seq[SymTab], name: string, kind: symKind, data: pointer): SymTab = 
     var t: SymTab
     new(t)
 
     t.name = name
     t.kind = kind
     case kind:
-    of tMatrix:
+    of symMatrix:
         t.m = cast[Matrix](data)
-    of tConstants:
+    of symConstants:
         t.c = cast[Constants](data)
-    of tLight:
+    of symLight:
         t.l = cast[Light](data)
-    of tValue:
+    of symValue:
         t.value = cast[float](data)
 
     p.add(t)
-    
-proc setValue*(p: SymTab, value: float) =
+    return t
+
+proc sesymValue*(p: SymTab, value: float) =
     p.value = value

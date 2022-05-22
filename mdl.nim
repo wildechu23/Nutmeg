@@ -1,4 +1,4 @@
-import nimly, parser, patty, strutils, unittest
+import matrix, nimly, parser, patty, strutils, symtab, unittest
 
 variantp Token:
     FLOAT(val: float)
@@ -34,8 +34,10 @@ variantp Token:
     DISPLAY
     WEB
     CO
-    STRING
+    STRING(str: string)
     IGNORE
+
+var p: seq[SymTab] = @[]
 
 niml mdlLex[Token]:
     r"-?\d+":
@@ -118,8 +120,8 @@ niml mdlLex[Token]:
     #     return WEB()
     # r":":
     #     return CO()
-    # r"\w*":
-    #     return STRING()
+    r"\w*":
+        return STRING($token.token)
     r"\s":
         return IGNORE()
 
@@ -128,6 +130,13 @@ nimy mdlPar[Token]:
         SPHERE FLOAT FLOAT FLOAT FLOAT:
             let a: array[4, float] = [($2).val, ($3).val, ($4).val, 0]
             var op: Command = Command(kind: sphere, sphereConstants: nil, sphereCS: nil, sphered: a, spherer: ($5).val)
+            return @[op]
+        SPHERE FLOAT FLOAT FLOAT FLOAT STRING:
+            let a: array[4, float] = [($2).val, ($3).val, ($4).val, 0]
+            var 
+                m: Matrix = newMatrix(4,4)
+                cs: SymTab = addSymbol(p, ($6).str, symMatrix, cast[pointer](m))
+                op: Command = Command(kind: sphere, sphereConstants: nil, sphereCs: cs, sphered: a, spherer: ($5).val)
             return @[op]
 
 # test "test Lexer":

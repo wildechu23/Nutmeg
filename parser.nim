@@ -41,7 +41,7 @@ type
         of camera:
             eye*, aim*: array[4, float]
         of sphere:
-            sphereConstants*, sphereCS*: ref SymTab
+            sphereConstants*, sphereCS*: SymTab
             sphered*: array[4, float]
             spherer*: float
         of texture:

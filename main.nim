@@ -40,6 +40,6 @@ proc main() =
     clearZBuffer(zb)
     
     # parseFile("script", edges, polygons, cs, s, zb, view, ambient, light, areflect, dreflect, sreflect)
-    echo mdlParse("sphere 0 10 20 30")
+    echo mdlParse("sphere 0 10 20 30 bleh")
 
 main()
