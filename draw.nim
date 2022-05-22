@@ -91,7 +91,7 @@ proc generateSphere(cx, cy, cz, r: float, step: int): Matrix =
         m: Matrix = newMatrix(0, 0)
         i: int = 0
         j: int = 0
-    const n = 20
+    const n = DEFAULT_POLYGON_N
     while i < n:
         while j <= n:
             let
@@ -107,7 +107,7 @@ proc generateSphere(cx, cy, cz, r: float, step: int): Matrix =
 proc addSphere*(m: var Matrix, cx, cy, cz, r: float, step: int) =
     var i = 0
     let p = generateSphere(cx, cy, cz, r, step)
-    const n = 20
+    const n = DEFAULT_POLYGON_N
     while i < p.len - n - 1:
         addPolygon(m, p[i][0], p[i][1], p[i][2], p[i+1][0], p[i+1][1], p[i+1][2], p[i+n+2][0], p[i+n+2][1], p[i+n+2][2])
         for j in i+1..<i+n-1:
@@ -129,7 +129,7 @@ proc generateTorus(cx, cy, cz, r1, r2: float, step: int): Matrix =
         m: Matrix = newMatrix(0, 0)
         i: int = 0
         j: int = 0
-    const n = 20
+    const n = DEFAULT_POLYGON_N
     while i < n:
         while j < n:
             let
@@ -145,7 +145,7 @@ proc generateTorus(cx, cy, cz, r1, r2: float, step: int): Matrix =
 proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
     var i = 0
     let p = generateTorus(cx, cy, cz, r1, r2, step)
-    const n = 20
+    const n = DEFAULT_POLYGON_N
     while i < p.len - n:
         for j in i..<i+n-1:
             addPolygon(m, p[j][0], p[j][1], p[j][2], p[j+n+1][0], p[j+n+1][1], p[j+n+1][2], p[j+1][0], p[j+1][1], p[j+1][2])

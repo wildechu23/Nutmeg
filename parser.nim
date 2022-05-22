@@ -1,4 +1,126 @@
-import display, draw, matrix, stack, std/strutils, std/osproc, std/strformat
+import display, draw, matrix, stack, std/strutils, std/osproc, std/strformat, symtab
+
+type
+    OpKind* = enum
+        light,
+        ambient,
+        constants,
+        saveCoordinateSystem,
+        camera,
+        sphere,
+        texture,
+        torus,
+        box,
+        line,
+        mesh,
+        set,
+        move,
+        scale,
+        rotate,
+        basename,
+        saveKnobs,
+        tween,
+        frames,
+        vary,
+        save,
+        shading,
+        setKnobs,
+        focal
+    Command* = object
+        case kind*: OpKind
+        of light:
+            lightp*: SymTab
+            lightc*: array[4, float]
+        of ambient:
+            ambientc*: array[4, float]
+        of constants:
+            constantsp*: SymTab
+        of saveCoordinateSystem:
+            saveCSp*: SymTab
+        of camera:
+            eye*, aim*: array[4, float]
+        of sphere:
+            sphereConstants*, sphereCS*: ref SymTab
+            sphered*: array[4, float]
+            spherer*: float
+        of texture:
+            texConstants*, texp*: SymTab
+            texd0*, texd1*, texd2*, texd3*: array[3, float]
+        of torus:
+            torusConstants*, torusCS*: SymTab
+            torusd*: array[4, float]
+            torusr0*, torusr1*: float
+        of box:
+            boxConstants*, boxCS*: SymTab
+            boxd0*, boxd1*: array[4, float]
+        of line:
+            lineConstants*, linecs0*, linecs1*: SymTab
+            linep0*, linep1*: array[4, float]
+        of mesh:
+            meshConstants*, meshCS*: SymTab
+            name*: string
+        of set:
+            setp*: SymTab
+            setval*: float
+        of move:
+            movep*: SymTab
+            moved*: array[4, float]
+        of scale:
+            scalep*: SymTab
+            scaled*: array[4, float]
+        of rotate:
+            rotatep*: SymTab
+            axis*, degrees*: float
+        of basename:
+            basenamep*: SymTab
+        of saveKnobs:
+            saveKnobsp*: SymTab
+        of tween:
+            tweenStartFrame*, tweenEndFrame*: float
+            knobList0*, knobList1*: SymTab
+        of frames:
+            numFrames*: float
+        of vary:
+            varyp*: SymTab
+            varyStartFrame*, varyEndFrame*, startVal*, endVal*: float
+        of save:
+            savep*: SymTab
+        of shading:
+            shadingp*: SymTab
+        of setKnobs:
+            setKnobsValue*: float
+        of focal:
+            focalValue*: float
+
+    # Op {.union.} = object
+    #     light: LightOp
+    #     ambient: AmbientOp
+    #     constants: ConstantsOp
+    #     saveCoordinateSystem: SaveCoordinateSystemOp
+    #     camera: CameraOp
+    #     sphere: SphereOp
+    #     texture: TextureOp
+    #     torus: TorusOp
+    #     box: BoxOp
+    #     line: LineOp
+    #     mesh: MeshOp
+    #     set: SetOp
+    #     move: MoveOp
+    #     scale: ScaleOp
+    #     rotate: RotateOp
+    #     basename: BasenameOp
+    #     saveKnobs: SaveKnobsOp
+    #     tween: TweenOp
+    #     frames: FramesOp
+    #     vary: VaryOp
+    #     save: SaveOp
+    #     shading: ShadingOp
+    #     setKnobs: SetKnobsOp
+    #     focal: FocalOp
+
+    
+
+
 
 proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, view: tuple, ambient: Color, light: Matrix, areflect, dreflect, sreflect: tuple) = 
     var c: Color

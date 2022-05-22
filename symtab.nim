@@ -17,7 +17,7 @@ type
         l: light
         value: float
 
-    SymTab = object
+    SymTab* = object
         name: char
         tType: int
         s: sym
