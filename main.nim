@@ -1,6 +1,6 @@
 import std/math
 
-import display, draw, matrix, parser, stack, std/random
+import display, draw, matrix, mdl, parser, stack, std/random
 
 proc main() =
     randomize()
@@ -39,10 +39,7 @@ proc main() =
     clearScreen(s)
     clearZBuffer(zb)
     
-    parseFile("script", edges, polygons, cs, s, zb, view, ambient, light, areflect, dreflect, sreflect)
-    # for y in 0..<YRES:
-    #     for x in 0..<XRES:
-    #         stdout.write $zb[x][y] & " "
-    #     stdout.write "\n"
+    # parseFile("script", edges, polygons, cs, s, zb, view, ambient, light, areflect, dreflect, sreflect)
+    echo mdlParse("sphere 0 10 20 30")
 
 main()

@@ -26,6 +26,7 @@ type
         shading,
         setKnobs,
         focal
+
     Command* = object
         case kind*: OpKind
         of light:
@@ -91,36 +92,6 @@ type
             setKnobsValue*: float
         of focal:
             focalValue*: float
-
-    # Op {.union.} = object
-    #     light: LightOp
-    #     ambient: AmbientOp
-    #     constants: ConstantsOp
-    #     saveCoordinateSystem: SaveCoordinateSystemOp
-    #     camera: CameraOp
-    #     sphere: SphereOp
-    #     texture: TextureOp
-    #     torus: TorusOp
-    #     box: BoxOp
-    #     line: LineOp
-    #     mesh: MeshOp
-    #     set: SetOp
-    #     move: MoveOp
-    #     scale: ScaleOp
-    #     rotate: RotateOp
-    #     basename: BasenameOp
-    #     saveKnobs: SaveKnobsOp
-    #     tween: TweenOp
-    #     frames: FramesOp
-    #     vary: VaryOp
-    #     save: SaveOp
-    #     shading: ShadingOp
-    #     setKnobs: SetKnobsOp
-    #     focal: FocalOp
-
-    
-
-
 
 proc parseFile*(path: string, edges, polygons: var Matrix, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, view: tuple, ambient: Color, light: Matrix, areflect, dreflect, sreflect: tuple) = 
     var c: Color

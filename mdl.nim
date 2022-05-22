@@ -1,4 +1,4 @@
-import nimly, parser, patty, strutils
+import nimly, parser, patty, strutils, unittest
 
 variantp Token:
     FLOAT(val: float)
@@ -35,9 +35,9 @@ variantp Token:
     WEB
     CO
     STRING
+    IGNORE
 
-
-niml Lexer[Token]:
+niml mdlLex[Token]:
     r"-?\d+":
         return FLOAT(parseFloat(token.token))
     # r"-?\d+\.":
@@ -120,12 +120,26 @@ niml Lexer[Token]:
     #     return CO()
     # r"\w*":
     #     return STRING()
+    r"\s":
+        return IGNORE()
 
-nimy Parser[Token]:
+nimy mdlPar[Token]:
     top[seq[Command]]:
         SPHERE FLOAT FLOAT FLOAT FLOAT:
             let a: array[4, float] = [($2).val, ($3).val, ($4).val, 0]
-            #     sphere: SphereOp
-            # sphere = SphereOp(constants: nil, cs: nil, d: a, r: ($5).val)
             var op: Command = Command(kind: sphere, sphereConstants: nil, sphereCS: nil, sphered: a, spherer: ($5).val)
             return @[op]
+
+# test "test Lexer":
+#   var lexer = mdlLex.newWithString("sphere 0 50 100 200")
+#   lexer.ignoreIf = proc(r: Token): bool = r.kind == TokenKind.IGNORE
+  
+#   mdlPar.init()
+#   echo mdlPar.parse(lexer)
+
+proc mdlParse*(str: string): seq[Command] =
+    var lexer = mdlLex.newWithString(str)
+    lexer.ignoreIf = proc(r: Token): bool = r.kind == TokenKind.IGNORE
+
+    mdlPar.init()
+    return mdlPar.parse(lexer)
