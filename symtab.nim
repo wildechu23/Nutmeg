@@ -7,13 +7,13 @@ type
         symLight,
         symValue
 
-    Constants = object
+    Constants* = object
         r: array[4, float]
         g: array[4, float]
         b: array[4, float]
         red, green, blue: float
     
-    Light = object
+    Light* = object
         l: array[4, float]
         c: array[4, float]
 
@@ -26,6 +26,9 @@ type
         of symValue: value: float
 
     SymTab* = ref SymTabObj
+
+proc newConstants*(): Constants =
+    Constants(r: [0.0, 0.0, 0.0, 0.0], g: [0.0, 0.0, 0.0, 0.0], b: [0.0, 0.0, 0.0, 0.0], red: 0, green: 0, blue: 0)
 
 proc printConstants*(p: Constants) =
     echo &"\tRed -\t Ka: {p.r[0]} Kd: {p.r[1]} Ks: {p.r[2]}" 
@@ -64,7 +67,8 @@ proc addSymbol*(p: var seq[SymTab], name: string, kind: symKind, data: pointer):
     of symMatrix:
         t.m = cast[Matrix](data)
     of symConstants:
-        t.c = cast[Constants](data)
+        let d = cast[ptr string](data)
+        t.c = cast[Constants](d[])
     of symLight:
         t.l = cast[Light](data)
     of symValue:

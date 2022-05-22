@@ -136,7 +136,23 @@ nimy mdlPar[Token]:
             var 
                 m: Matrix = newMatrix(4,4)
                 cs: SymTab = addSymbol(p, ($6).str, symMatrix, cast[pointer](m))
-                op: Command = Command(kind: sphere, sphereConstants: nil, sphereCs: cs, sphered: a, spherer: ($5).val)
+                op: Command = Command(kind: sphere, sphereConstants: nil, sphereCS: cs, sphered: a, spherer: ($5).val)
+            return @[op]
+        SPHERE STRING FLOAT FLOAT FLOAT FLOAT:
+            let a: array[4, float] = [($3).val, ($4).val, ($5).val, 0]
+            var 
+                c: Constants = newConstants()
+                cons: SymTab = addSymbol(p, ($2).str, symConstants, addr(c))
+                op: Command = Command(kind: sphere, sphereConstants: cons, sphereCS: nil, sphered: a, spherer: ($6).val)
+            return @[op]
+        SPHERE STRING FLOAT FLOAT FLOAT FLOAT STRING:
+            let a: array[4, float] = [($3).val, ($4).val, ($5).val, 0]
+            var 
+                m: Matrix = newMatrix(4,4)
+                cs: SymTab = addSymbol(p, ($6).str, symMatrix, cast[pointer](m))
+                c: Constants = newConstants()
+                cons: SymTab = addSymbol(p, ($2).str, symConstants, addr(c))
+                op: Command = Command(kind: sphere, sphereConstants: cons, sphereCS: cs, sphered: a, spherer: ($6).val)
             return @[op]
 
 # test "test Lexer":
