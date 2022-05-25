@@ -1,6 +1,29 @@
-import std/math
+import display, draw, matrix, parser, stack, std/random
 
-import display, draw, matrix, mdl, parser, stack, std/random
+type
+    cmatrix {.importc: "struct matrix", header: "matrix.h".} = object
+        rows, cols: cint
+        lastcol: cint
+        m: ptr ptr cdouble
+    
+    cconstants {.importc: "struct constants", header: "symtab.h".} = object
+        r, g, b: array[4, cdouble]
+        red, green, blue: cdouble
+
+    clight {.importc: "struct light", header: "symtab.h".} = object
+        l, c: array[4, cdouble]
+
+
+    cSym = object {.union.}
+        m: cmatrix
+        c: cconstants
+        l: clight
+        value: cdouble
+
+    cSymTab {.importc: "SYMTAB" , header: "symtab.h"} = object
+        name: cstring
+        t {.importc: "type".} : cint
+        s: cSym
 
 proc main() =
     randomize()
@@ -38,8 +61,20 @@ proc main() =
     polygons = newMatrix(0, 0)
     clearScreen(s)
     clearZBuffer(zb)
+
+    {.compile: "matrix.c", passL: "-lm".}
+    proc parseC(path: cstring): cint {.importc: "parseC", header: "y.tab.c".}
+
+
+    echo parseC("face.mdl")
     
     # parseFile("script", edges, polygons, cs, s, zb, view, ambient, light, areflect, dreflect, sreflect)
-    echo mdlParse("sphere 0 10 20 30 bleh")
+    # echo mdlParse("sphere 0 10 20 30")
+
+    # let 
+    #     script: string = readFile("script")
+    #     parsed: seq[Command] = mdlParse(script)
+    # echo parsed
+
 
 main()
