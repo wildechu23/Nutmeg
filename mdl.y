@@ -5,6 +5,7 @@
 #include <string.h>
 #include "parser.h"
 #include "matrix.h"
+#include "symtab.h"
 
 #define YYERROR_VERBOSE 1
 
@@ -797,15 +798,15 @@ int lsym() {
 }
 
 
-int parseC(char *path) {
+SYMTAB* parseC(char *path) {
 
   yyin = fopen(path,"r");
 
   yyparse();
   //COMMENT OUT PRINT_PCODE AND UNCOMMENT
   //MY_MAIN IN ORDER TO RUN YOUR CODE
+  //print_pcode();
 
-  int i = get_symtab();
-
-  return i;
+  return get_symtab();
+  //return 0;
 }

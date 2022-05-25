@@ -129,5 +129,6 @@ struct command
 extern struct command op[MAX_COMMANDS];
 
 void print_pcode();
-void my_main();
+SYMTAB *get_symtab();
+int get_symlen();
 #endif

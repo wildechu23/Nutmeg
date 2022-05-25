@@ -35,10 +35,6 @@ void print_light(struct light *p)
          p->c[0],p->c[1],p->c[2]);
 }
 
-int iter_symtab(int i) {
-  return symtab[i].type;
-}
-
 int slength() {
   return lastsym;
 }

@@ -2,9 +2,9 @@ import display, draw, matrix, parser, stack, std/random
 
 type
     cmatrix {.importc: "struct matrix", header: "matrix.h".} = object
+        m: ptr ptr cdouble
         rows, cols: cint
         lastcol: cint
-        m: ptr ptr cdouble
     
     cconstants {.importc: "struct constants", header: "symtab.h".} = object
         r, g, b: array[4, cdouble]
@@ -24,6 +24,33 @@ type
         name: cstring
         t {.importc: "type".} : cint
         s: cSym
+    
+    symKind* = enum
+        symMatrix,
+        symConstants,
+        symLight,
+        symValue,
+        symFile
+
+    Constants* = object
+        r: array[4, float]
+        g: array[4, float]
+        b: array[4, float]
+        red, green, blue: float
+    
+    Light* = object
+        l: array[4, float]
+        c: array[4, float]
+
+    SymTabObj* = object
+        name: string
+        case kind: symKind
+        of symMatrix: m: Matrix
+        of symConstants: c: Constants
+        of symLight: l: Light
+        of symValue: value: float
+
+    SymTab* = ref SymTabObj
 
 proc main() =
     randomize()
@@ -63,10 +90,50 @@ proc main() =
     clearZBuffer(zb)
 
     {.compile: "matrix.c", passL: "-lm".}
-    proc parseC(path: cstring): cint {.importc: "parseC", header: "y.tab.c".}
+    proc parseC(path: cstring): ptr UncheckedArray[cSymTab] {.importc: "parseC", header: "y.tab.c".}
+    proc getSymlen(): cint {.importc: "get_symlen", header: "parser.h".}
 
 
-    echo parseC("face.mdl")
+
+    let 
+        c: ptr UncheckedArray[cSymTab] =  parseC("face.mdl")
+        symTabLen: cint = getSymlen()
+    var 
+        counter = 0
+        symTab: seq[SymTab] = @[]
+
+    while counter < symTabLen:
+        let ctab = c[counter]
+        var s: SymTab
+        new(s)
+        s.name = $ctab.name
+        case ctab.t:
+        of 1:
+            s.kind = symMatrix
+            s.m = ctab.s.m
+        of 2:
+            s.kind = symValue
+            s.value = ctab.s.value
+        of 3:
+            s.kind = symConstants
+            let 
+                cConst = ctab.s.c
+                nConst: Constants = Constants(
+                    r: cConst.r, g: cConst.g, b: cConst.b,
+                    red: cConst.red, green: cConst.green, blue: cConst.blue
+                )
+            s.c = nConst
+        of 4:
+            s.kind = symLight
+            let 
+                cLight = ctab.s.l
+                nLight: Light = Light(l: cLight.l, c: cLight.c)
+            s.l = nLight
+        of 5:
+            s.kind = symFile
+        # echo c[counter].t
+
+        counter += 1
     
     # parseFile("script", edges, polygons, cs, s, zb, view, ambient, light, areflect, dreflect, sreflect)
     # echo mdlParse("sphere 0 10 20 30")
