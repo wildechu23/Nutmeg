@@ -793,20 +793,15 @@ int yywrap()
 
 extern FILE *yyin;
 
-int lsym() {
-  return lastsym;
+void parseC(char *path) {
+  yyin = fopen(path, "r");
+  yyparse();
 }
 
-
-SYMTAB* parseC(char *path) {
-
-  yyin = fopen(path,"r");
-
-  yyparse();
-  //COMMENT OUT PRINT_PCODE AND UNCOMMENT
-  //MY_MAIN IN ORDER TO RUN YOUR CODE
-  //print_pcode();
-
+SYMTAB* get_sym() {
   return get_symtab();
-  //return 0;
+}
+
+struct command* get_ops() {
+  return get_optable();
 }
