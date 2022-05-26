@@ -347,7 +347,6 @@ proc cOptoOp(otab: cCommand, symTab: seq[SymTab]): Command =
     of 265:
         newOp.kind = OpKind.sphere
         newOP.sphereConstants = checkSym(otab.op.sphere.constants, symTab)
-        # echo otab.op.sphere.constants.s.c.r
         newOp.sphered = otab.op.sphere.d
         newOp.spherer = otab.op.sphere.r
         newOP.sphereCS = checkSym(otab.op.sphere.cs, symTab)
@@ -485,7 +484,7 @@ proc main() =
         symTab.add(s)
         counter += 1
 
-    printSymTab(symTab)
+    # printSymTab(symTab)
 
     let 
         o: ptr UncheckedArray[cCommand] = getOp()
