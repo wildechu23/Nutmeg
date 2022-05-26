@@ -45,6 +45,7 @@ proc calculateDiffuse(light: Matrix, dreflect: tuple, normal: tuple): Color =
         n: tuple = normalize(normal)
         l: tuple = normalize((light[0][0], light[0][1], light[0][2]))
         d: float = dotProduct(n, l)
+    
     result.red = int(light[1][0] * dreflect[0] * d).clamp(0, 255)
     result.green = int(light[1][1] * dreflect[1] * d).clamp(0, 255)
     result.blue = int(light[1][2] * dreflect[2] * d).clamp(0, 255)
@@ -64,6 +65,7 @@ proc getLighting*(normal, view: tuple, alight: Color, light: Matrix, areflect, d
         a = calculateAmbient(alight, areflect)
         d = calculateDiffuse(light, dreflect, normal)
         s = calculateSpecular(light, sreflect, view, normal)
-    var c = a + d + s
-    clampColor(c)
-    c
+    # echo "dred " & $d.red
+    # echo "dgreen " & $d.green
+    result = a + d + s
+    clampColor(result)

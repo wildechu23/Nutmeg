@@ -1,4 +1,4 @@
-import display, draw, matrix, parser, stack, std/random, std/strformat
+import display, draw, matrix, parser, stack, std/random, std/strformat, std/tables, std/osproc
 
 type
     cmatrix {.importc: "struct matrix", header: "matrix.h".} = ref object
@@ -208,7 +208,7 @@ type
         setKnobs,
         focal
 
-    Command = object
+    Command = ref object
         opcode: int
         case kind: OpKind
         of light:
@@ -277,6 +277,125 @@ type
         else:
             discard
 
+proc cSymtoSym(ctab: cSymTab): SymTab = 
+    var s: SymTab
+    new(s)
+    s.name = $ctab.name
+    # echo ctab.s.m.type
+    case ctab.t:
+    of 1:
+        s.kind = symMatrix
+        let
+            cMatrix: cmatrix = ctab.s.m
+            cmm: seq[seq[cdouble]] = cast[seq[seq[cdouble]]](cMatrix.m)
+        var
+            nMatrix: Matrix = newMatrix(cMatrix.rows, cMatrix.cols)
+            i = 0
+        while i < cMatrix.rows:
+            var j = 0
+            while j < cMatrix.cols:
+                nMatrix[i][j] = cmm[i][j]
+        s.m = nMatrix
+    of 2:
+        s.kind = symValue
+        s.value = ctab.s.value
+    of 3:
+        # echo "CONSTANT"
+        s.kind = symConstants
+        let 
+            cConst: cconstants = ctab.s.c
+            nConst: Constants = Constants(
+                r: cConst.r, g: cConst.g, b: cConst.b,
+                red: cConst.red, green: cConst.green, blue: cConst.blue
+            )
+        # echo "cConst: " & $cConst.r
+        # echo "nConst: " & $nConst.r
+        s.c = nConst
+    of 4:
+        s.kind = symLight
+        let 
+            cLight = ctab.s.l
+            nLight: Light = Light(l: cLight.l, c: cLight.c)
+        s.l = nLight
+    of 5:
+        s.kind = symFile
+    else:
+        discard
+    return s
+
+proc lookUpcSym(p: ptr cSymTab, s: seq[SymTab]): SymTab = 
+    let name = $p[].name
+    for i in s:
+        if name == i.name:
+            return i
+    
+proc checkSym(p: ptr cSymTab, s: seq[SymTab]): SymTab = 
+    result = if p == nil: nil else: lookUpcSym(p, s)
+    # if result != nil:
+    #     echo result.name
+
+proc cOptoOp(otab: cCommand, symTab: seq[SymTab]): Command =
+    var newOp: Command
+    new(newOp)
+    newOp.opcode = otab.opcode
+    case otab.opcode:
+    of 258:
+        discard
+    of 262:
+        newOp.kind = OpKind.constants
+        newOp.constantsp = checkSym(otab.op.constants.p, symTab)
+    of 265:
+        newOp.kind = OpKind.sphere
+        newOP.sphereConstants = checkSym(otab.op.sphere.constants, symTab)
+        # echo otab.op.sphere.constants.s.c.r
+        newOp.sphered = otab.op.sphere.d
+        newOp.spherer = otab.op.sphere.r
+        newOP.sphereCS = checkSym(otab.op.sphere.cs, symTab)
+    of 266:
+        newOp.kind = OpKind.torus
+        newOp.torusConstants = checkSym(otab.op.torus.constants, symTab)
+        newOp.torusd = otab.op.torus.d
+        newOp.torusr0 = otab.op.torus.r0
+        newOp.torusr1 = otab.op.torus.r1
+        newOp.torusCS = checkSym(otab.op.torus.cs, symTab)
+    of 267:
+        newOp.kind = OpKind.box
+        newOp.boxConstants = checkSym(otab.op.box.constants, symTab)
+        newOp.boxd0 = otab.op.box.d0
+        newOp.boxd1 = otab.op.box.d1
+    of 268:
+        newOp.kind = OpKind.line
+        newOp.lineConstants = checkSym(otab.op.line.constants, symTab)
+        newOp.linecs0 = checkSym(otab.op.line.cs0, symTab)
+        newOp.linecs1 = checkSym(otab.op.line.cs1, symTab)
+        newOp.linep0 = otab.op.line.p0
+        newOp.linep1 = otab.op.line.p1
+    of 274:
+        newOp.kind = OpKind.move
+        newOp.moved = otab.op.move.d
+        newOp.movep = checkSym(otab.op.move.p, symTab)
+    of 275: 
+        newOp.kind = OpKind.scale
+        newOp.scaled = otab.op.scale.d
+        newOp.scalep = checkSym(otab.op.scale.p, symTab)
+    of 276:
+        newOp.kind = OpKind.rotate
+        newOp.axis = otab.op.rotate.axis
+        newOp.degrees = otab.op.rotate.degrees
+        newOp.rotatep = checkSym(otab.op.rotate.p, symTab)
+    of 282:
+        newOp.kind = OpKind.push
+    of 283:
+        newOp.kind = OpKind.pop
+    of 284:
+        newOp.kind = OpKind.save
+        newOp.savep = checkSym(otab.op.save.p, symTab)
+    of 290:
+        newOp.kind = OpKind.displayOp
+    else:
+        discard
+    return newOp
+
 proc main() =
     randomize()
 
@@ -293,6 +412,11 @@ proc main() =
         areflect: tuple = (0.1, 0.1, 0.1)
         dreflect: tuple = (0.5, 0.5, 0.5)
         sreflect: tuple = (0.5, 0.5, 0.5)
+        color: Color
+
+    color.red = 255
+    color.green = 255
+    color.blue = 255
         
     ambient.red = 50
     ambient.green = 50
@@ -303,7 +427,7 @@ proc main() =
     light[0][1] = 0.75
     light[0][2] = 1
 
-    light[1][0] = 0
+    light[1][0] = 255
     light[1][1] = 255
     light[1][2] = 255
 
@@ -354,59 +478,115 @@ proc main() =
         symTab: seq[SymTab] = @[]
 
     while counter < symTabLen:
-        let ctab: cSymTab = c[counter]
-        var s: SymTab
-        new(s)
-        s.name = $ctab.name
-        # echo ctab.s.m.type
-        case ctab.t:
-        of 1:
-            s.kind = symMatrix
-            let
-                cMatrix: cmatrix = ctab.s.m
-                cmm: seq[seq[cdouble]] = cast[seq[seq[cdouble]]](cMatrix.m)
-            var
-                nMatrix: Matrix = newMatrix(cMatrix.rows, cMatrix.cols)
-                i = 0
-            while i < cMatrix.rows:
-                var j = 0
-                while j < cMatrix.cols:
-                    nMatrix[i][j] = cmm[i][j]
-            s.m = nMatrix
-        of 2:
-            s.kind = symValue
-            s.value = ctab.s.value
-        of 3:
-            s.kind = symConstants
-            let 
-                cConst = ctab.s.c
-                nConst: Constants = Constants(
-                    r: cConst.r, g: cConst.g, b: cConst.b,
-                    red: cConst.red, green: cConst.green, blue: cConst.blue
-                )
-            s.c = nConst
-        of 4:
-            s.kind = symLight
-            let 
-                cLight = ctab.s.l
-                nLight: Light = Light(l: cLight.l, c: cLight.c)
-            s.l = nLight
-        of 5:
-            s.kind = symFile
-        else:
-            discard
+        let 
+            ctab: cSymTab = c[counter]
+            s = cSymtoSym(ctab)
         
         symTab.add(s)
         counter += 1
 
     printSymTab(symTab)
 
-
     let 
         o: ptr UncheckedArray[cCommand] = getOp()
-        opTabLen = getOplen()
+        opTabLen: cint = getOplen()
     counter = 0
-    var opTab: seq[]
+    var opTab: seq[Command] = @[]
+    
+
+    while counter < opTabLen:
+        let 
+            otab: cCommand = o[counter]
+            s = cOptoOp(otab, symTab)
+
+        opTab.add(s)
+        counter += 1
+
+    for i in opTab:
+        # if i.opcode == 265:
+        case i.kind:
+        of box:
+            addBox(polygons, i.boxd0[0], i.boxd0[1], i.boxd0[2], i.boxd1[0], i.boxd1[1], i.boxd1[2])
+            mul(cs[^1], polygons)
+            if i.boxConstants == nil:
+                drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+            else:
+                var nColor: Color
+                nColor.red = int(i.boxConstants.c.red)
+                nColor.green =  int(i.boxConstants.c.green)
+                nColor.blue =  int(i.boxConstants.c.blue)
+                var
+                    nAmbient: tuple = (i.boxConstants.c.r[0], i.boxConstants.c.g[0], i.boxConstants.c.b[0])
+                    nDiffuse: tuple = (i.boxConstants.c.r[1], i.boxConstants.c.g[1], i.boxConstants.c.b[1])
+                    nSpec: tuple = (i.boxConstants.c.r[2], i.boxConstants.c.g[2], i.boxConstants.c.b[2])
+                drawPolygons(polygons, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
+            polygons = newMatrix(0,0)
+        of sphere:
+            addSphere(polygons, i.sphered[0], i.sphered[1], i.sphered[2], i.spherer, 1)
+            mul(cs[^1], polygons)
+            # echo i.sphereConstants == nil
+            if i.sphereConstants == nil:
+                drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+            else:
+                var nColor: Color
+                nColor.red = int(i.sphereConstants.c.red)
+                nColor.green =  int(i.sphereConstants.c.green)
+                nColor.blue =  int(i.sphereConstants.c.blue)
+                var
+                    nAmbient: tuple = (i.sphereConstants.c.r[0], i.sphereConstants.c.g[0], i.sphereConstants.c.b[0])
+                    nDiffuse: tuple = (i.sphereConstants.c.r[1], i.sphereConstants.c.g[1], i.sphereConstants.c.b[1])
+                    nSpec: tuple = (i.sphereConstants.c.r[2], i.sphereConstants.c.g[2], i.sphereConstants.c.b[2])
+                drawPolygons(polygons, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
+            polygons = newMatrix(0,0)
+        of torus:
+            addTorus(polygons, i.torusd[0], i.torusd[1], i.torusd[2], i.torusr0, i.torusr1, 1)
+            mul(cs[^1], polygons)
+            if i.torusConstants == nil:
+                drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+            else:
+                var nColor: Color
+                nColor.red = int(i.torusConstants.c.red)
+                nColor.green =  int(i.torusConstants.c.green)
+                nColor.blue =  int(i.torusConstants.c.blue)
+                var
+                    nAmbient: tuple = (i.torusConstants.c.r[0], i.torusConstants.c.g[0], i.torusConstants.c.b[0])
+                    nDiffuse: tuple = (i.torusConstants.c.r[1], i.torusConstants.c.g[1], i.torusConstants.c.b[1])
+                    nSpec: tuple = (i.torusConstants.c.r[2], i.torusConstants.c.g[2], i.torusConstants.c.b[2])
+                drawPolygons(polygons, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
+            polygons = newMatrix(0,0)
+        of move:
+            var m: Matrix = makeTranslate(i.moved[0], i.moved[1], i.moved[2])
+            mul(cs[^1], m)
+            cs[^1] = m
+        of scale:
+            var m: Matrix = makeScale(i.scaled[0], i.scaled[1], i.scaled[2])
+            mul(cs[^1], m)
+            cs[^1] = m
+        of rotate:
+            var m = block:
+                case i.axis:
+                of 0: makeRotX(i.degrees) 
+                of 1: makeRotY(i.degrees) 
+                of 2: makeRotZ(i.degrees) 
+                else: raise newException(ValueError, "Axis not x, y, or z")
+            mul(cs[^1], m)
+            cs[^1] = m
+        of push:
+            cs.push(cs[^1])
+        of pop:
+            discard cs.pop
+        of displayOp:
+            savePpm(s, "img.ppm")
+            discard execCmd("convert img.ppm img.png && display img.png")
+        of save:
+            let 
+                nLine: string = i.savep.name
+                l: string = nLine[0 .. ^5]
+                cmd: string = &"convert img.ppm {l}.png"
+            savePpm(s, "img.ppm")
+            discard execCmd(cmd)
+        else:
+            discard
 
     
     # parseFile("script", edges, polygons, cs, s, zb, view, ambient, light, areflect, dreflect, sreflect)
@@ -416,6 +596,7 @@ proc main() =
     #     script: string = readFile("script")
     #     parsed: seq[Command] = mdlParse(script)
     # echo parsed
+
 
 
 main()

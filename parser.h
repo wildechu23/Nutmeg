@@ -128,6 +128,6 @@ extern struct command op[MAX_COMMANDS];
 void print_pcode();
 SYMTAB *get_symtab();
 int get_symlen();
-struct command *get_opstable();
-int get_opslen();
+struct command *get_optable();
+int get_oplen();
 #endif
