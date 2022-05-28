@@ -57,5 +57,6 @@ clean:
 	rm -f *.ppm
 	rm -f *.png
 	rm -f *.o
+	rm -f lex.yy.c
 	rm -f y.tab.*
 	rm -f main display draw gmath matrix parser stack
