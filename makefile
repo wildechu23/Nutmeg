@@ -33,7 +33,7 @@ get_symtab.o: get_symtab.c symtab.h parser.h matrix.h
 	gcc -c -g get_symtab.c
 
 main: main.nim display.nim draw.nim matrix.nim stack.nim
-	nim c -l:lex.yy.o -l:symtab.o -l:get_symtab.o -d:nimOldCaseObjects main.nim 
+	nim c -l:lex.yy.o -l:symtab.o -l:get_symtab.o -d:nimOldCaseObjects -d:release main.nim 
 
 display: display.nim
 	nim c display.nim
