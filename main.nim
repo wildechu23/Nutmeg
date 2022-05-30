@@ -1,4 +1,4 @@
-import display, draw, matrix, parser, stack, std/random, std/strformat, std/strutils, std/osproc
+import display, draw, matrix, parser, stack, std/random, std/strformat, std/strutils, std/osproc, os
 
 
 proc main() =
@@ -87,6 +87,7 @@ proc main() =
     firstPass(opTab, nFrames, basename)
     knobs = secondPass(opTab, nFrames)
     if nFrames != 0:
+        discard existsOrCreateDir("anim")
         for f in 0..<nFrames:
             execOp(opTab, knobs, f, nFrames, edges, polygons, cs, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             savePpm(s, "img.ppm")
