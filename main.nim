@@ -1,4 +1,4 @@
-import display, draw, matrix, parser, stack, std/random, std/strformat, std/tables, std/osproc
+import display, draw, matrix, parser, stack, std/random, std/strformat, std/strutils, std/osproc
 
 
 proc main() =
@@ -47,13 +47,16 @@ proc main() =
     proc getSymlen(): cint {.importc: "get_symlen", header: "parser.h".}
     proc getOplen(): cint {.importc: "get_oplen", header: "parser.h".}
 
-    parseC("face.mdl")
+    parseC("tests/simple_anim.mdl")
 
     let 
         c: ptr UncheckedArray[cSymTab] =  getSym()
         symTabLen: cint = getSymlen()
     var 
+        nFrames: int
+        basename: string
         counter = 0
+        knobs: seq[seq[varyNode]]
         symTab: seq[SymTab] = @[]
 
     while counter < symTabLen:
@@ -81,8 +84,20 @@ proc main() =
         opTab.add(s)
         counter += 1
 
-    execOp(opTab, edges, polygons, cs, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
-
+    firstPass(opTab, nFrames, basename)
+    knobs = secondPass(opTab, nFrames)
+    if nFrames != 0:
+        for f in 0..<nFrames:
+            execOp(opTab, knobs, f, nFrames, edges, polygons, cs, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+            savePpm(s, "img.ppm")
+            let c: string = align($f, 3, '0')
+            discard execCmd(&"convert img.ppm anim/{basename}{c}.png")
+            clearScreen(s)
+            clearZBuffer(zb)
+            cs = newStack[Matrix]()
+        discard execCmd(&"convert -delay 1.7 anim/{basename}* {basename}.gif")
+    else:
+        execOp(opTab, knobs, 0, nFrames, edges, polygons, cs, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
     # parseFile("script", edges, polygons, cs, s, zb, view, ambient, light, areflect, dreflect, sreflect)
     # echo mdlParse("sphere 0 10 20 30")
 

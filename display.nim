@@ -9,7 +9,7 @@ const
     XRES*: int = 500
     YRES*: int = 500
     DEFAULT_COLOR*: int = 255
-    DEFAULT_POLYGON_N*: int = 100
+    DEFAULT_POLYGON_N*: int = 20
     MAX_COLOR*: int = 255
 
 proc `+`*(a, b: Color): Color =

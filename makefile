@@ -59,4 +59,5 @@ clean:
 	rm -f *.o
 	rm -f lex.yy.c
 	rm -f y.tab.*
+	rm -f anim/*
 	rm -f main display draw gmath matrix parser stack

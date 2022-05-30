@@ -1,10 +1,9 @@
 import display, draw, matrix, stack, std/strutils, std/osproc, std/strformat
 
 type
-    varyNode = ref object
+    varyNode* = ref object
         name: string
         value: float
-        next: varyNode
 
     cmatrix {.importc: "struct matrix", header: "matrix.h".} = ref object
         m: ptr ptr cdouble
@@ -36,7 +35,8 @@ type
         symConstants,
         symLight,
         symValue,
-        symFile
+        symFile,
+        symString
 
     Constants = object
         r: array[4, float]
@@ -55,6 +55,7 @@ type
         of symConstants: c: Constants
         of symLight: l: Light
         of symValue: value: float
+        of symString: discard
         of symFile: discard
 
     SymTab* = ref SymTabObj
@@ -281,24 +282,60 @@ type
             focalValue: float
         else:
             discard
+
+proc `$`(v: varyNode): string =
+    &"(name: {v.name}, value: {v.value})"
         
-proc getKnobNode(front: varyNode, knobName: string): varyNode =
-    var curr: varyNode = front
-    while(curr != nil):
-        if(curr.name == knobName):
-            return curr
-    return curr
+proc getKnobNode(knobs: seq[seq[varyNode]], numFrames: int, knobName: string): seq[varyNode] =
+    for i in knobs:
+        for j in 0..<numFrames:
+            if i[j].name == knobName:
+                return i
+    return @[]
 
-proc addNode(front: varyNode, knobName: string): varyNode =
-    varyNode(name: knobName, value: 0, next: front)
+proc addNode(knobs: var seq[varyNode], knobName:  string) =
+    knobs.add(varyNode(name: knobName, value: 0))
 
-proc firstPass(numFrame: int, name: string) =
-    discard
+proc firstPass*(opTab: seq[Command], numFrame: var int, name: var string) =
+    var 
+        bname: string
+        nFrames: float
+        varyCheck: bool
+    for i in opTab:
+        case i.kind:
+        of basename:
+            bname = i.basenamep.name
+        of frames:
+            nFrames = i.num_frames
+        of vary:
+            varyCheck = true
+        else:
+            discard
 
-proc secondPass(): ref varyNode =
-    var
-        curr: varyNode = nil
-        knobs: ref varyNode
+    if varyCheck and nFrames == 0:
+        quit("Vary with no specified number of frames")
+    if nFrames != 0 and bname == "":
+        bname = "default"
+        echo "Default name used for basename"
+
+    numFrame = int(nFrames)
+    name = bname
+
+proc secondPass*(opTab: seq[Command], numFrames: int): seq[seq[varyNode]] =
+    var knobs: seq[seq[varyNode]]
+    for i in opTab:
+        if i.kind == vary:
+            var s = newSeq[varyNode](numFrames)
+            for j in 0..<int(i.varyStartFrame):
+                if s[j] == nil:
+                    s[j] = varyNode(name: i.varyp.name, value: i.startVal)
+            for j in int(i.varyStartFrame)..int(i.varyEndFrame):
+                let c = (i.endVal - i.startVal) / (i.varyEndFrame - i.varyStartFrame)
+                s[j] = varyNode(name: i.varyp.name, value: i.startVal + c * (float(j) - i.varyStartFrame))
+            for j in int(i.varyEndFrame+1)..<numFrames:
+                if s[j] == nil:
+                    s[j] = varyNode(name: i.varyp.name, value: i.endVal)
+            knobs.add(s)
     return knobs
 
 proc printConstants(p: Constants) =
@@ -322,7 +359,7 @@ proc printSymTab*(p: seq[SymTab]) =
             printLight(i.l)
         of symValue:
             echo i.value
-        of symFile:
+        of symFile, symString:
             echo i.name
 
 proc cSymtoSym*(ctab: cSymTab): SymTab = 
@@ -430,6 +467,19 @@ proc cOptoOp*(otab: cCommand, symTab: seq[SymTab]): Command =
         newOp.axis = otab.op.rotate.axis
         newOp.degrees = otab.op.rotate.degrees
         newOp.rotatep = checkSym(otab.op.rotate.p, symTab)
+    of 277:
+        newOp.kind = OpKind.basename
+        newOp.basenamep = checkSym(otab.op.basename.p, symTab)
+    of 280:
+        newOp.kind = OpKind.frames
+        newOp.numFrames = otab.op.frames.num_frames
+    of 281:
+        newOp.kind = OpKind.vary
+        newOp.varyp = checkSym(otab.op.vary.p, symTab)
+        newOp.varyStartFrame = otab.op.vary.start_frame
+        newOp.varyEndFrame = otab.op.vary.end_frame
+        newOp.startVal = otab.op.vary.start_val
+        newOp.endVal = otab.op.vary.end_val
     of 282:
         newOp.kind = OpKind.push
     of 283:
@@ -443,7 +493,7 @@ proc cOptoOp*(otab: cCommand, symTab: seq[SymTab]): Command =
         discard
     return newOp
 
-proc execOp*(opTab: seq[Command], edges, polygons: var Matrix, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
+proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: int, edges, polygons: var Matrix, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     for i in opTab:
         # if i.opcode == 265:
         case i.kind:
@@ -497,19 +547,41 @@ proc execOp*(opTab: seq[Command], edges, polygons: var Matrix, cs: var Stack[Mat
                 drawPolygons(polygons, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
             polygons = newMatrix(0,0)
         of Opkind.move:
-            var m: Matrix = makeTranslate(i.moved[0], i.moved[1], i.moved[2])
+            var
+                x = i.moved[0]
+                y = i.moved[1]
+                z = i.moved[2]
+            if i.movep != nil:
+                let k = getKnobNode(knobs, numFrames, i.movep.name)
+                x *= k[f].value
+                y *= k[f].value
+                z *= k[f].value
+            var m: Matrix = makeTranslate(x, y, z)
             mul(cs[^1], m)
             cs[^1] = m
         of scale:
-            var m: Matrix = makeScale(i.scaled[0], i.scaled[1], i.scaled[2])
+            var
+                x = i.scaled[0]
+                y = i.scaled[1]
+                z = i.scaled[2]
+            if i.scalep != nil:
+                let k = getKnobNode(knobs, numFrames, i.scalep.name)
+                x *= k[f].value
+                y *= k[f].value
+                z *= k[f].value
+            var m: Matrix = makeScale(x, y, z)
             mul(cs[^1], m)
             cs[^1] = m
         of rotate:
+            var d = i.degrees
+            if i.rotatep != nil:
+                let k = getKnobNode(knobs, numFrames, i.rotatep.name)
+                d *= k[f].value
             var m = block:
                 case i.axis:
-                of 0: makeRotX(i.degrees) 
-                of 1: makeRotY(i.degrees) 
-                of 2: makeRotZ(i.degrees) 
+                of 0: makeRotX(d) 
+                of 1: makeRotY(d) 
+                of 2: makeRotZ(d) 
                 else: raise newException(ValueError, "Axis not x, y, or z")
             mul(cs[^1], m)
             cs[^1] = m
@@ -522,8 +594,8 @@ proc execOp*(opTab: seq[Command], edges, polygons: var Matrix, cs: var Stack[Mat
             discard execCmd("convert img.ppm img.png && display img.png")
         of save:
             let 
-                nLine: string = i.savep.name
-                l: string = nLine[0 .. ^5]
+                name: string = i.savep.name
+                l: string = name[0 .. ^5]
                 cmd: string = &"convert img.ppm {l}.png"
             savePpm(s, "img.ppm")
             discard execCmd(cmd)
