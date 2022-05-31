@@ -47,7 +47,7 @@ proc main() =
     proc getSymlen(): cint {.importc: "get_symlen", header: "parser.h".}
     proc getOplen(): cint {.importc: "get_oplen", header: "parser.h".}
 
-    parseC("tests/simple_anim.mdl")
+    parseC("tests/simple_300.mdl")
 
     let 
         c: ptr UncheckedArray[cSymTab] =  getSym()

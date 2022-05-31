@@ -286,12 +286,12 @@ type
 proc `$`(v: varyNode): string =
     &"(name: {v.name}, value: {v.value})"
         
-proc getKnobNode(knobs: seq[seq[varyNode]], numFrames: int, knobName: string): seq[varyNode] =
-    for i in knobs:
+proc getKnobNode(knobs: seq[seq[varyNode]], numFrames: int, knobName: string): int =
+    for i in 0..<knobs.len:
         for j in 0..<numFrames:
-            if i[j].name == knobName:
+            if knobs[i][j].name == knobName:
                 return i
-    return @[]
+    return -1
 
 proc addNode(knobs: var seq[varyNode], knobName:  string) =
     knobs.add(varyNode(name: knobName, value: 0))
@@ -325,7 +325,10 @@ proc secondPass*(opTab: seq[Command], numFrames: int): seq[seq[varyNode]] =
     var knobs: seq[seq[varyNode]]
     for i in opTab:
         if i.kind == vary:
-            var s = newSeq[varyNode](numFrames)
+            var s: seq[varyNode] = knobs[getKnobNode(knobs, numFrames, i.varyp.name)]
+            if s.len == 0:
+                s = newSeq[varyNode](numFrames)
+                echo i.varyp.name
             for j in 0..<int(i.varyStartFrame):
                 if s[j] == nil:
                     s[j] = varyNode(name: i.varyp.name, value: i.startVal)
@@ -335,7 +338,11 @@ proc secondPass*(opTab: seq[Command], numFrames: int): seq[seq[varyNode]] =
             for j in int(i.varyEndFrame+1)..<numFrames:
                 if s[j] == nil:
                     s[j] = varyNode(name: i.varyp.name, value: i.endVal)
-            knobs.add(s)
+            if getKnobNode(knobs, numFrames, i.varyp.name) == -1:
+                knobs.add(s)
+            else:
+                knobs[getKnobNode(knobs, numFrames, i.varyp.name)] = s
+            echo s
     return knobs
 
 proc printConstants(p: Constants) =
@@ -552,7 +559,7 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                 y = i.moved[1]
                 z = i.moved[2]
             if i.movep != nil:
-                let k = getKnobNode(knobs, numFrames, i.movep.name)
+                let k = knobs[getKnobNode(knobs, numFrames, i.movep.name)]
                 x *= k[f].value
                 y *= k[f].value
                 z *= k[f].value
@@ -565,7 +572,7 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                 y = i.scaled[1]
                 z = i.scaled[2]
             if i.scalep != nil:
-                let k = getKnobNode(knobs, numFrames, i.scalep.name)
+                let k = knobs[getKnobNode(knobs, numFrames, i.scalep.name)]
                 x *= k[f].value
                 y *= k[f].value
                 z *= k[f].value
@@ -575,7 +582,7 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
         of rotate:
             var d = i.degrees
             if i.rotatep != nil:
-                let k = getKnobNode(knobs, numFrames, i.rotatep.name)
+                let k = knobs[getKnobNode(knobs, numFrames, i.rotatep.name)]
                 d *= k[f].value
             var m = block:
                 case i.axis:
