@@ -55,6 +55,7 @@ proc main() =
     var 
         nFrames: int
         basename: string
+        vCheck: bool = false
         counter = 0
         knobs: seq[seq[varyNode]]
         symTab: seq[SymTab] = @[]
@@ -84,9 +85,9 @@ proc main() =
         opTab.add(s)
         counter += 1
 
-    firstPass(opTab, nFrames, basename)
+    firstPass(opTab, nFrames, basename, vCheck)
     knobs = secondPass(opTab, nFrames)
-    if nFrames != 0:
+    if vCheck:
         discard existsOrCreateDir("anim")
         for f in 0..<nFrames:
             execOp(opTab, knobs, f, nFrames, edges, polygons, cs, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)

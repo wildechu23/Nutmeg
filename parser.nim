@@ -296,7 +296,7 @@ proc getKnobNode(knobs: seq[seq[varyNode]], numFrames: int, knobName: string): i
 proc addNode(knobs: var seq[varyNode], knobName:  string) =
     knobs.add(varyNode(name: knobName, value: 0))
 
-proc firstPass*(opTab: seq[Command], numFrame: var int, name: var string) =
+proc firstPass*(opTab: seq[Command], numFrame: var int, name: var string, vCheck: var bool) =
     var 
         bname: string
         nFrames: float
@@ -320,6 +320,7 @@ proc firstPass*(opTab: seq[Command], numFrame: var int, name: var string) =
 
     numFrame = int(nFrames)
     name = bname
+    vCheck = varyCheck
 
 proc secondPass*(opTab: seq[Command], numFrames: int): seq[seq[varyNode]] =
     var knobs: seq[seq[varyNode]]
