@@ -325,10 +325,11 @@ proc secondPass*(opTab: seq[Command], numFrames: int): seq[seq[varyNode]] =
     var knobs: seq[seq[varyNode]]
     for i in opTab:
         if i.kind == vary:
-            var s: seq[varyNode] = knobs[getKnobNode(knobs, numFrames, i.varyp.name)]
-            if s.len == 0:
+            var s: seq[varyNode]
+            if getKnobNode(knobs, numFrames, i.varyp.name) == -1:
                 s = newSeq[varyNode](numFrames)
-                echo i.varyp.name
+            else:
+                s = knobs[getKnobNode(knobs, numFrames, i.varyp.name)]
             for j in 0..<int(i.varyStartFrame):
                 if s[j] == nil:
                     s[j] = varyNode(name: i.varyp.name, value: i.startVal)
@@ -342,7 +343,6 @@ proc secondPass*(opTab: seq[Command], numFrames: int): seq[seq[varyNode]] =
                 knobs.add(s)
             else:
                 knobs[getKnobNode(knobs, numFrames, i.varyp.name)] = s
-            echo s
     return knobs
 
 proc printConstants(p: Constants) =
