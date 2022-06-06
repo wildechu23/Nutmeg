@@ -87,7 +87,7 @@ proc main() =
 
     firstPass(opTab, nFrames, basename, vCheck)
     knobs = secondPass(opTab, nFrames)
-    if vCheck:
+    if nFrames > 0:
         discard existsOrCreateDir("anim")
         for f in 0..<nFrames:
             execOp(opTab, knobs, f, nFrames, edges, polygons, cs, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)

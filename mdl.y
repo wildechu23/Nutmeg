@@ -779,7 +779,7 @@ GENERATE_RAYFILES
 
 
 /* Other C stuff */
-int yyerror(char *s)
+int yyerror(const char *s)
 {
   printf("Error in line %d:%s\n",lineno,s);
   return 0;

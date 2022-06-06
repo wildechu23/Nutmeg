@@ -462,6 +462,10 @@ proc cOptoOp*(otab: cCommand, symTab: seq[SymTab]): Command =
         newOp.linecs1 = checkSym(otab.op.line.cs1, symTab)
         newOp.linep0 = otab.op.line.p0
         newOp.linep1 = otab.op.line.p1
+    of 270:
+        newOp.kind = OpKind.mesh
+        newOp.meshConstants = checkSym(otab.op.mesh.constants, symTab)
+        newOp.meshCS = checkSym(otab.op.mesh.cs, symTab)
     of 274:
         newOp.kind = OpKind.move
         newOp.moved = otab.op.move.d
@@ -552,6 +556,22 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                     nAmbient: tuple = (i.torusConstants.c.r[0], i.torusConstants.c.g[0], i.torusConstants.c.b[0])
                     nDiffuse: tuple = (i.torusConstants.c.r[1], i.torusConstants.c.g[1], i.torusConstants.c.b[1])
                     nSpec: tuple = (i.torusConstants.c.r[2], i.torusConstants.c.g[2], i.torusConstants.c.b[2])
+                drawPolygons(polygons, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
+            polygons = newMatrix(0,0)
+        of mesh:
+            # addMesh()
+            mul(cs[^1], polygons)
+            if i.meshConstants == nil:
+                drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+            else:
+                var nColor: Color
+                nColor.red = int(i.meshConstants.c.red)
+                nColor.green =  int(i.meshConstants.c.green)
+                nColor.blue =  int(i.meshConstants.c.blue)
+                var
+                    nAmbient: tuple = (i.meshConstants.c.r[0], i.meshConstants.c.g[0], i.meshConstants.c.b[0])
+                    nDiffuse: tuple = (i.meshConstants.c.r[1], i.meshConstants.c.g[1], i.meshConstants.c.b[1])
+                    nSpec: tuple = (i.meshConstants.c.r[2], i.meshConstants.c.g[2], i.meshConstants.c.b[2])
                 drawPolygons(polygons, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
             polygons = newMatrix(0,0)
         of Opkind.move:

@@ -160,6 +160,9 @@ proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[0][0], p[0][1], p[0][2], p[i][0], p[i][1], p[i][2])
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[n-1][0], p[n-1][1], p[n-1][2], p[0][0], p[0][1], p[0][2])
 
+proc addMesh(m: var Matrix, file: string) =
+    discard
+
 proc diagLine(x0, y0: int, z0: float, x1, y1: int, z1: float, s: var Screen, zb: var ZBuffer, c: Color) =
     let
         a: int = 2*(y1 - y0) # A
