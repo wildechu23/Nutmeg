@@ -20,7 +20,7 @@
 #if YYBISON
 union YYSTYPE;
 int yylex();
-int yyerror(char *s);
+int yyerror(const char *s);
 #endif
 
   %}

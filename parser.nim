@@ -247,7 +247,7 @@ type
             linep0, linep1: array[4, float]
         of mesh:
             meshConstants, meshCS: SymTab
-            name: string
+            meshName: string
         of set:
             setp: SymTab
             setval: float
@@ -414,7 +414,6 @@ proc cSymtoSym*(ctab: cSymTab): SymTab =
         s.kind = symFile
     else:
         discard
-    return s
 
 proc lookUpcSym(p: ptr cSymTab, s: seq[SymTab]): SymTab = 
     let name = $p[].name
@@ -457,7 +456,6 @@ proc cOptoOp*(otab: cCommand, symTab: seq[SymTab]): Command =
         newOp.boxd1 = otab.op.box.d1
     of 268:
         newOp.kind = OpKind.line
-        newOp.lineConstants = checkSym(otab.op.line.constants, symTab)
         newOp.linecs0 = checkSym(otab.op.line.cs0, symTab)
         newOp.linecs1 = checkSym(otab.op.line.cs1, symTab)
         newOp.linep0 = otab.op.line.p0
@@ -466,6 +464,7 @@ proc cOptoOp*(otab: cCommand, symTab: seq[SymTab]): Command =
         newOp.kind = OpKind.mesh
         newOp.meshConstants = checkSym(otab.op.mesh.constants, symTab)
         newOp.meshCS = checkSym(otab.op.mesh.cs, symTab)
+        newOp.meshName = $otab.op.mesh.name
     of 274:
         newOp.kind = OpKind.move
         newOp.moved = otab.op.move.d
@@ -559,7 +558,7 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                 drawPolygons(polygons, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
             polygons = newMatrix(0,0)
         of mesh:
-            # addMesh()
+            addMesh(polygons, i.meshName)
             mul(cs[^1], polygons)
             if i.meshConstants == nil:
                 drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)

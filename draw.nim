@@ -1,4 +1,7 @@
-import display, gmath, matrix, std/algorithm, std/math, std/random
+import display, gmath, matrix, std/algorithm, std/math, std/random, strutils
+
+type
+    Vertex = tuple[x, y, z: float]
 
 proc addPoint*(m: var Matrix, x, y, z: float) =
     m.add newSeq[float](4)
@@ -160,8 +163,25 @@ proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[0][0], p[0][1], p[0][2], p[i][0], p[i][1], p[i][2])
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[n-1][0], p[n-1][1], p[n-1][2], p[0][0], p[0][1], p[0][2])
 
-proc addMesh(m: var Matrix, file: string) =
-    discard
+proc addMesh*(m: var Matrix, path: string) =
+    let f = open(path, fmRead)
+    defer: f.close()
+    var 
+        line: string
+        v: seq[Vertex]
+    while(f.readLine(line)):
+        let arg: seq[string] = line.split(' ')
+        case arg[0]:
+        of "v":
+            v.add((parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3])))
+        of "f":
+            var verts: seq[int]
+            for i in arg:
+                let info = i.split("/")
+                verts.add(parseInt(info[0]))
+            addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[1]][0], v[verts[1]][1], v[verts[1]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2])
+        else:
+            discard
 
 proc diagLine(x0, y0: int, z0: float, x1, y1: int, z1: float, s: var Screen, zb: var ZBuffer, c: Color) =
     let
