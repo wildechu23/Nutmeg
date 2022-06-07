@@ -296,7 +296,7 @@ proc getKnobNode(knobs: seq[seq[varyNode]], numFrames: int, knobName: string): i
 proc addNode(knobs: var seq[varyNode], knobName:  string) =
     knobs.add(varyNode(name: knobName, value: 0))
 
-proc firstPass*(opTab: seq[Command], numFrame: var int, name: var string, vCheck: var bool) =
+proc firstPass*(opTab: seq[Command], numFrame: var int, name: var string) =
     var 
         bname: string
         nFrames: float
@@ -320,7 +320,6 @@ proc firstPass*(opTab: seq[Command], numFrame: var int, name: var string, vCheck
 
     numFrame = int(nFrames)
     name = bname
-    vCheck = varyCheck
 
 proc secondPass*(opTab: seq[Command], numFrames: int): seq[seq[varyNode]] =
     var knobs: seq[seq[varyNode]]
@@ -414,6 +413,7 @@ proc cSymtoSym*(ctab: cSymTab): SymTab =
         s.kind = symFile
     else:
         discard
+    return s
 
 proc lookUpcSym(p: ptr cSymTab, s: seq[SymTab]): SymTab = 
     let name = $p[].name
@@ -456,6 +456,7 @@ proc cOptoOp*(otab: cCommand, symTab: seq[SymTab]): Command =
         newOp.boxd1 = otab.op.box.d1
     of 268:
         newOp.kind = OpKind.line
+        newOp.lineConstants = checkSym(otab.op.line.constants, symTab)
         newOp.linecs0 = checkSym(otab.op.line.cs0, symTab)
         newOp.linecs1 = checkSym(otab.op.line.cs1, symTab)
         newOp.linep0 = otab.op.line.p0

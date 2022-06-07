@@ -64,7 +64,7 @@ proc main() =
         let 
             ctab: cSymTab = c[counter]
             s = cSymtoSym(ctab)
-        
+
         symTab.add(s)
         counter += 1
 
@@ -85,7 +85,7 @@ proc main() =
         opTab.add(s)
         counter += 1
 
-    firstPass(opTab, nFrames, basename, vCheck)
+    firstPass(opTab, nFrames, basename)
     knobs = secondPass(opTab, nFrames)
     if nFrames > 0:
         discard existsOrCreateDir("anim")
