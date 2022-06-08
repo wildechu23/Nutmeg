@@ -170,16 +170,24 @@ proc addMesh*(m: var Matrix, path: string) =
         line: string
         v: seq[Vertex]
     while(f.readLine(line)):
-        let arg: seq[string] = line.split("  ")
+        let arg: seq[string] = line.splitWhitespace()
+        echo arg
         case arg[0]:
         of "v":
             v.add((parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3])))
         of "f":
             var verts: seq[int]
-            for i in arg[1..3]:
+            for i in arg[1..^1]:
                 let info = i.split("/")
                 verts.add(parseInt(info[0]) - 1)
-            addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[1]][0], v[verts[1]][1], v[verts[1]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2])
+            case arg.len:
+            of 4:
+                addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[1]][0], v[verts[1]][1], v[verts[1]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2])
+            # of 5:
+            #     addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[1]][0], v[verts[1]][1], v[verts[1]][2], v[verts[3]][0], v[verts[3]][1], v[verts[3]][2])
+            #     addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2], v[verts[3]][0], v[verts[3]][1], v[verts[3]][2])
+            else:
+                discard
         else:
             discard
 

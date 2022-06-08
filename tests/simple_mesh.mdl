@@ -1,3 +1,7 @@
-mesh :cube.obj
+move 200 200 0
+rotate x 30
+rotate y 30
+scale 100 100 100
+mesh :gourd.obj
 display
-save cube.png
+save gourd.png
