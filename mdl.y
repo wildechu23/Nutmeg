@@ -20,7 +20,7 @@
 #if YYBISON
 union YYSTYPE;
 int yylex();
-int yyerror(const char *s);
+int yyerror(char *s);
 #endif
 
   %}
@@ -779,7 +779,7 @@ GENERATE_RAYFILES
 
 
 /* Other C stuff */
-int yyerror(const char *s)
+int yyerror(char *s)
 {
   printf("Error in line %d:%s\n",lineno,s);
   return 0;
