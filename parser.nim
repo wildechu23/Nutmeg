@@ -505,7 +505,7 @@ proc cOptoOp*(otab: cCommand, symTab: seq[SymTab]): Command =
         discard
     return newOp
 
-proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: int, edges, polygons: var Matrix, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
+proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: int, edges, polygons, normals: var Matrix, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     for i in opTab:
         # if i.opcode == 265:
         case i.kind:
@@ -559,7 +559,7 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                 drawPolygons(polygons, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
             polygons = newMatrix(0,0)
         of mesh:
-            addMesh(polygons, i.meshName)
+            addMesh(polygons, normals, i.meshName)
             mul(cs[^1], polygons)
             if i.meshConstants == nil:
                 drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)

@@ -22,6 +22,11 @@ proc addPolygon(m: var Matrix, x0, y0, z0, x1, y1, z1, x2, y2, z2: float) =
     m.addPoint x2, y2, z2
     # echo m
 
+proc addNormals(n: var Matrix, x0, y0, z0, x1, y1, z1, x2, y2, z2: float) =
+    n.addPoint x0, y0, z0
+    n.addPoint x1, y1, z1
+    n.addPoint x2, y2, z2
+
 proc addCircle*(m: var Matrix, cx, cy, cz, r, step: float) =
     var 
         t: float = step
@@ -163,12 +168,13 @@ proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[0][0], p[0][1], p[0][2], p[i][0], p[i][1], p[i][2])
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[n-1][0], p[n-1][1], p[n-1][2], p[0][0], p[0][1], p[0][2])
 
-proc addMesh*(m: var Matrix, path: string) =
+proc addMesh*(m: var Matrix, n: var Matrix, path: string) =
     let f = open(path, fmRead)
     defer: f.close()
     var 
         line: string
         v: seq[Vertex]
+        vn: seq[Vertex]
     while(f.readLine(line)):
         let arg: seq[string] = line.splitWhitespace()
         # echo arg
@@ -176,6 +182,8 @@ proc addMesh*(m: var Matrix, path: string) =
             case arg[0]:
             of "v":
                 v.add((parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3])))
+            of "vn":
+                vn.add((parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3])))
             of "f":
                 var verts: seq[int]
                 for i in arg[1..^1]:
@@ -184,6 +192,7 @@ proc addMesh*(m: var Matrix, path: string) =
                 case arg.len:
                 of 4:
                     addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[1]][0], v[verts[1]][1], v[verts[1]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2])
+                    addNormals(m, vn[verts[0]][0], vn[verts[0]][1], vn[verts[0]][2], vn[verts[1]][0], vn[verts[1]][1], vn[verts[1]][2], vn[verts[2]][0], vn[verts[2]][1], vn[verts[2]][2])
                 of 5:
                     addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[1]][0], v[verts[1]][1], v[verts[1]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2])
                     addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2], v[verts[3]][0], v[verts[3]][1], v[verts[3]][2])
