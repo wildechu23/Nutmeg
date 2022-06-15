@@ -15,6 +15,7 @@ proc main() =
         dreflect: tuple = (0.5, 0.5, 0.5)
         sreflect: tuple = (0.5, 0.5, 0.5)
         color: Color
+        shadingType: ShadingType = flat
 
     color.red = 255
     color.green = 255
@@ -48,7 +49,7 @@ proc main() =
     proc getSymlen(): cint {.importc: "get_symlen", header: "parser.h".}
     proc getOplen(): cint {.importc: "get_oplen", header: "parser.h".}
 
-    parseC("tests/quad.mdl")
+    parseC("tests/bronzor.mdl")
 
     let 
         c: ptr UncheckedArray[cSymTab] =  getSym()
@@ -91,7 +92,7 @@ proc main() =
     if nFrames > 0:
         discard existsOrCreateDir("anim")
         for f in 0..<nFrames:
-            execOp(opTab, knobs, f, nFrames, edges, polygons, normals, cs, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+            execOp(opTab, knobs, f, nFrames, edges, polygons, normals, shadingType, cs, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             savePpm(s, "img.ppm")
             let c: string = align($f, 3, '0')
             discard execCmd(&"convert img.ppm anim/{basename}{c}.png")
@@ -100,7 +101,7 @@ proc main() =
             cs = newStack[Matrix]()
         discard execCmd(&"convert -delay 1.7 anim/{basename}* {basename}.gif")
     else:
-        execOp(opTab, knobs, 0, nFrames, edges, polygons, normals, cs, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+        execOp(opTab, knobs, 0, nFrames, edges, polygons, normals, shadingType, cs, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
     # parseFile("script", edges, polygons, cs, s, zb, view, ambient, light, areflect, dreflect, sreflect)
     # echo mdlParse("sphere 0 10 20 30")
 

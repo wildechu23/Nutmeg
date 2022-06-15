@@ -36,9 +36,9 @@ proc calculateNormal*(m: Matrix, i: int): tuple =
     (a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0])
 
 proc calculateAmbient(alight: Color, areflect: tuple): Color =
-    result.red = int(float(alight.red) * areflect[0]).clamp(0, 255)
-    result.green = int(float(alight.green) * areflect[1]).clamp(0, 255)
-    result.blue = int(float(alight.blue) * areflect[2]).clamp(0, 255)
+    result.red = (float(alight.red) * areflect[0]).clamp(0, 255)
+    result.green = (float(alight.green) * areflect[1]).clamp(0, 255)
+    result.blue = (float(alight.blue) * areflect[2]).clamp(0, 255)
 
 proc calculateDiffuse(light: Matrix, dreflect: tuple, normal: tuple): Color =
     var 
@@ -46,9 +46,9 @@ proc calculateDiffuse(light: Matrix, dreflect: tuple, normal: tuple): Color =
         l: tuple = normalize((light[0][0], light[0][1], light[0][2]))
         d: float = dotProduct(n, l)
     
-    result.red = int(light[1][0] * dreflect[0] * d).clamp(0, 255)
-    result.green = int(light[1][1] * dreflect[1] * d).clamp(0, 255)
-    result.blue = int(light[1][2] * dreflect[2] * d).clamp(0, 255)
+    result.red = (light[1][0] * dreflect[0] * d).clamp(0, 255)
+    result.green = (light[1][1] * dreflect[1] * d).clamp(0, 255)
+    result.blue = (light[1][2] * dreflect[2] * d).clamp(0, 255)
 
 proc calculateSpecular(light: Matrix, sreflect: tuple, view, normal: tuple): Color =
     var 
@@ -56,9 +56,9 @@ proc calculateSpecular(light: Matrix, sreflect: tuple, view, normal: tuple): Col
         l: tuple = normalize((light[0][0], light[0][1], light[0][2]))
         v: tuple = normalize(view)
         d: float = dotProduct(subtract(scale(scale(n, 2), dotProduct(n, l)), l), v)
-    result.red = int(light[1][0] * sreflect[0] * d).clamp(0, 255)
-    result.green = int(light[1][1] * sreflect[1] * d).clamp(0, 255)
-    result.blue = int(light[1][2] * sreflect[2] * d).clamp(0, 255)
+    result.red = (light[1][0] * sreflect[0] * d).clamp(0, 255)
+    result.green = (light[1][1] * sreflect[1] * d).clamp(0, 255)
+    result.blue = (light[1][2] * sreflect[2] * d).clamp(0, 255)
 
 proc getLighting*(normal, view: tuple, alight: Color, light: Matrix, areflect, dreflect, sreflect: tuple): Color =
     let 

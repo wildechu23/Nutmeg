@@ -1,14 +1,14 @@
 import std/strformat
 
 type
-    Color* = tuple[red, green, blue: int]
+    Color* = tuple[red, green, blue: float]
     Screen*[XRES, YRES: static[int]] = array[XRES, array[YRES, Color]]
     ZBuffer*[XRES, YRES: static[int]] = array[XRES, array[YRES, float]]
 
 const
     XRES*: int = 500
     YRES*: int = 500
-    DEFAULT_COLOR*: int = 255
+    DEFAULT_COLOR*: float = 255.0
     DEFAULT_POLYGON_N*: int = 20
     MAX_COLOR*: int = 255
 
@@ -16,6 +16,19 @@ proc `+`*(a, b: Color): Color =
     result.red = a.red + b.red
     result.green = a.green + b.green
     result.blue = a.blue + b.blue
+    
+proc `-`*(a, b: Color): Color =
+    result.red = a.red - b.red
+    result.green = a.green - b.green
+    result.blue = a.blue - b.blue
+    
+proc `/`*(a: Color, b: float): Color =
+    result.red = a.red / b
+    result.green = a.green / b
+    result.blue =  a.blue / b
+
+proc cmp*(a, b: Color): bool =
+    (a.red == b.red) and (a.green == b.green) and (a.blue == b.blue)
 
 proc clampColor*(c: var Color) =
     c.red = (c.red).clamp(0, 255)

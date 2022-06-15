@@ -282,6 +282,10 @@ type
             focalValue: float
         else:
             discard
+    ShadingType* = enum
+        flat,
+        gouraud,
+        phong
 
 proc `$`(v: varyNode): string =
     &"(name: {v.name}, value: {v.value})"
@@ -499,13 +503,16 @@ proc cOptoOp*(otab: cCommand, symTab: seq[SymTab]): Command =
     of 284:
         newOp.kind = OpKind.save
         newOp.savep = checkSym(otab.op.save.p, symTab)
+    of 286:
+        newOp.kind = OpKind.shading
+        newOp.shadingp = checkSym(otab.op.shading.p, symTab)
     of 290:
         newOp.kind = OpKind.displayOp
     else:
         discard
     return newOp
 
-proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: int, edges, polygons, normals: var Matrix, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
+proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: int, edges, polygons, normals: var Matrix, shadingType: var ShadingType, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     for i in opTab:
         # if i.opcode == 265:
         case i.kind:
@@ -516,9 +523,9 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                 drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
                 var nColor: Color
-                nColor.red = int(i.boxConstants.c.red)
-                nColor.green =  int(i.boxConstants.c.green)
-                nColor.blue =  int(i.boxConstants.c.blue)
+                nColor.red = (i.boxConstants.c.red)
+                nColor.green = (i.boxConstants.c.green)
+                nColor.blue = (i.boxConstants.c.blue)
                 var
                     nAmbient: tuple = (i.boxConstants.c.r[0], i.boxConstants.c.g[0], i.boxConstants.c.b[0])
                     nDiffuse: tuple = (i.boxConstants.c.r[1], i.boxConstants.c.g[1], i.boxConstants.c.b[1])
@@ -533,9 +540,9 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                 drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
                 var nColor: Color
-                nColor.red = int(i.sphereConstants.c.red)
-                nColor.green =  int(i.sphereConstants.c.green)
-                nColor.blue =  int(i.sphereConstants.c.blue)
+                nColor.red = (i.sphereConstants.c.red)
+                nColor.green = (i.sphereConstants.c.green)
+                nColor.blue = (i.sphereConstants.c.blue)
                 var
                     nAmbient: tuple = (i.sphereConstants.c.r[0], i.sphereConstants.c.g[0], i.sphereConstants.c.b[0])
                     nDiffuse: tuple = (i.sphereConstants.c.r[1], i.sphereConstants.c.g[1], i.sphereConstants.c.b[1])
@@ -549,9 +556,9 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                 drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
                 var nColor: Color
-                nColor.red = int(i.torusConstants.c.red)
-                nColor.green =  int(i.torusConstants.c.green)
-                nColor.blue =  int(i.torusConstants.c.blue)
+                nColor.red = (i.torusConstants.c.red)
+                nColor.green = (i.torusConstants.c.green)
+                nColor.blue = (i.torusConstants.c.blue)
                 var
                     nAmbient: tuple = (i.torusConstants.c.r[0], i.torusConstants.c.g[0], i.torusConstants.c.b[0])
                     nDiffuse: tuple = (i.torusConstants.c.r[1], i.torusConstants.c.g[1], i.torusConstants.c.b[1])
@@ -565,9 +572,9 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                 drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
                 var nColor: Color
-                nColor.red = int(i.meshConstants.c.red)
-                nColor.green =  int(i.meshConstants.c.green)
-                nColor.blue =  int(i.meshConstants.c.blue)
+                nColor.red = (i.meshConstants.c.red)
+                nColor.green = (i.meshConstants.c.green)
+                nColor.blue = (i.meshConstants.c.blue)
                 var
                     nAmbient: tuple = (i.meshConstants.c.r[0], i.meshConstants.c.g[0], i.meshConstants.c.b[0])
                     nDiffuse: tuple = (i.meshConstants.c.r[1], i.meshConstants.c.g[1], i.meshConstants.c.b[1])
@@ -617,6 +624,16 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
             cs.push(cs[^1])
         of Opkind.pop:
             discard cs.pop
+        of shading:
+            case i.shadingp.name:
+            of "flat":
+                shadingType = flat
+            of "gouraud":
+                shadingType = gouraud
+            of "phong":
+                shadingType = phong
+            else:
+                discard
         of displayOp:
             savePpm(s, "img.ppm")
             discard execCmd("convert img.ppm img.png && display img.png")

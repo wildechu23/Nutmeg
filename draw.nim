@@ -1,4 +1,4 @@
-import display, gmath, matrix, std/algorithm, std/math, std/random, strutils
+import display, gmath, matrix, std/algorithm, std/math, std/random, std/tables, strutils
 
 type
     Vertex = tuple[x, y, z: float]
@@ -192,7 +192,7 @@ proc addMesh*(m: var Matrix, n: var Matrix, path: string) =
                 case arg.len:
                 of 4:
                     addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[1]][0], v[verts[1]][1], v[verts[1]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2])
-                    addNormals(m, vn[verts[0]][0], vn[verts[0]][1], vn[verts[0]][2], vn[verts[1]][0], vn[verts[1]][1], vn[verts[1]][2], vn[verts[2]][0], vn[verts[2]][1], vn[verts[2]][2])
+                    addNormals(n, vn[verts[0]][0], vn[verts[0]][1], vn[verts[0]][2], vn[verts[1]][0], vn[verts[1]][1], vn[verts[1]][2], vn[verts[2]][0], vn[verts[2]][1], vn[verts[2]][2])
                 of 5:
                     addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[1]][0], v[verts[1]][1], v[verts[1]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2])
                     addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2], v[verts[3]][0], v[verts[3]][1], v[verts[3]][2])
@@ -322,11 +322,46 @@ proc drawScanline(x0: int, z0: float, x1: int, z1: float, y: int, s: var Screen,
         xb = x1
         za = z0
         zb = z1
-    let dz: float = (if (xb - xa) != 0: (zb - za) / float(xb - xa + 1) else: 0)
+    # deleted the + 1 in xb - xa + 1
+    let dz: float = (if (xb - xa) != 0: (zb - za) / float(xb - xa) else: 0)
     z = za
     for x in xa..xb:
         plot(s, zbuffer, c, x, y, z)
         z += dz
+
+proc drawGScanline*(x0: int, z0: float, x1: int, z1: float, y: int, s: var Screen, zbuffer: var ZBuffer, i0: Color, i1: Color) =
+    var 
+        xa: int
+        xb: int
+        za: float
+        zb: float
+        z: float
+        ia: Color
+        ib: Color
+        c: Color
+    if x0 > x1:
+        xa = x1
+        xb = x0
+        za = z1
+        zb = z0
+        ia = i1
+        ib = i0
+    else:
+        xa = x0
+        xb = x1
+        za = z0
+        zb = z1
+        ia = i0
+        ib = i1
+    # deleted the + 1 in xb - xa + 1
+    let dz: float = (if (xb - xa) != 0: (zb - za) / float(xb - xa) else: 0)
+    let dc: Color = (if not cmp(ia, ib): (ib - ia) / float(xb - xa) else: (red: 0.0, green: 0.0, blue: 0.0))
+    z = za
+    c = ia
+    for x in xa..xb:
+        plot(s, zbuffer, c, x, y, z)
+        z += dz
+        c = c + dc
 
 proc scanLine(m: Matrix, i: int, s: var Screen, zb: var ZBuffer, c: Color) =
     var 
@@ -369,6 +404,69 @@ proc scanLine(m: Matrix, i: int, s: var Screen, zb: var ZBuffer, c: Color) =
         z1 += dz1
         y += 1
 
+proc gScanLine(m, n: Matrix, i: int, s: var Screen, zb: var ZBuffer, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
+    var 
+        p: Matrix = m[3*i .. 3*i + 2]
+        q: Table
+        flip = 0
+
+    for j in 0..<3:
+        q[m[3*i + j]] = n[3*i + j]
+
+    p.sort(cmpY)
+    q.sort(cmpY)
+    # bottom: p[0], middle: p[1], top: p[2]
+
+    let 
+        n0 = (q[p[0]][0], q[p[0]][1], q[p[0]][2])
+        n1 = (q[p[1]][0], q[p[1]][1], q[p[1]][2])
+        n2 = (q[p[2]][0], q[p[2]][1], q[p[2]][2])
+        i0: Color = getLighting(n0, view, ambient, light, areflect, dreflect, sreflect)
+        i1: Color = getLighting(n1, view, ambient, light, areflect, dreflect, sreflect)
+        i2: Color = getLighting(n2, view, ambient, light, areflect, dreflect, sreflect)
+
+    var
+        x0 = p[0][0]
+        x1 = p[0][0]
+        z0 = p[0][2]
+        z1 = p[0][2]
+        y: int = int(p[0][1])
+        c: Color = i0
+
+    let
+        dist0 = int(p[2][1]) - y + 1
+        dist1 = int(p[1][1]) - y + 1
+        dist2 = int(p[2][1]) - int(p[1][1]) + 1
+
+        dx0 = (if dist0 > 0: (p[2][0] - p[0][0]) / float(dist0) else: 0)
+        dz0 = (if dist0 > 0: (p[2][2] - p[0][2]) / float(dist0) else: 0)
+        di0 = (if dist0 > 0: (i2 - i0) / dist0 else: (red: 0, green: 0, blue: 0))
+
+    var
+        dx1 = (if dist1 > 0: (p[1][0] - p[0][0]) / float(dist1) else: 0)
+        dz1 = (if dist1 > 0: (p[1][2] - p[0][2]) / float(dist1) else: 0)
+        di1 = (if dist1 > 0: (i1 - i0) / dist1 else: (red: 0, green: 0, blue: 0))
+
+    while y <= int(p[2][1]):
+        if flip == 0 and y >= int(p[1][1]):
+            flip = 1
+            dx1 = (if dist2 > 0: (p[2][0] - p[1][0]) / float(dist2) else: 0)
+            dz1 = (if dist2 > 0: (p[2][2] - p[1][2]) / float(dist2) else: 0)
+            di1 = (if dist2 > 0: (i2 - i1) / dist2 else: (red: 0, green: 0, blue: 0))
+            x1 = p[1][0]
+            z1 = p[1][2]
+        drawGScanline(int(x0), z0, int(x1), z1, y, s, zb, i0, i1)
+        x0 += dx0
+        x1 += dx1
+        z0 += dz0
+        z1 += dz1
+        i0 += di0
+        i1 += di1
+        y += 1
+
+
+        
+
 proc drawPolygons*(m: var Matrix, s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     # echo m
     for i in 0..<(m.len div 3):
@@ -383,3 +481,18 @@ proc drawPolygons*(m: var Matrix, s: var Screen, zb: var ZBuffer, color: Color, 
             # drawLine(int(c[0]), int(c[1]), c[2], int(a[0]), int(a[1]), a[2], s, zb, color)
             let il: Color = getLighting(n, view, ambient, light, areflect, dreflect, sreflect)
             scanLine(m, i, s, zb, il)
+
+proc drawGPolygons*(m, n: var Matrix, s: var Screen, zb: var ZBuffer, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
+    # echo m
+    for i in 0..<(m.len div 3):
+        let
+            a = m[3*i]
+            b = m[3*i + 1]
+            c = m[3*i + 2]
+            fnormal = (n[3*i], n[3*i + 1], n[3*i + 2])
+        if dotProduct(fnormal, (0.0, 0.0, 1.0)) > 0:
+            # drawLine(int(a[0]), int(a[1]), a[2], int(b[0]), int(b[1]), b[2], s, zb, color)
+            # drawLine(int(b[0]), int(b[1]), b[2], int(c[0]), int(c[1]), c[2], s, zb, color)
+            # drawLine(int(c[0]), int(c[1]), c[2], int(a[0]), int(a[1]), a[2], s, zb, color)
+            # let il: Color = getLighting(n, view, ambient, light, areflect, dreflect, sreflect)
+            gScanLine(m, n, i, s, zb, view, ambient, light, areflect, dreflect, sreflect)
