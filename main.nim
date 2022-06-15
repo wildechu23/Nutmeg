@@ -49,7 +49,7 @@ proc main() =
     proc getSymlen(): cint {.importc: "get_symlen", header: "parser.h".}
     proc getOplen(): cint {.importc: "get_oplen", header: "parser.h".}
 
-    parseC("tests/bronzor.mdl")
+    parseC("tests/normals.mdl")
 
     let 
         c: ptr UncheckedArray[cSymTab] =  getSym()
@@ -70,7 +70,7 @@ proc main() =
         symTab.add(s)
         counter += 1
 
-    printSymTab(symTab)
+    # printSymTab(symTab)
 
     let 
         o: ptr UncheckedArray[cCommand] = getOp()

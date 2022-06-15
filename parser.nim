@@ -282,10 +282,6 @@ type
             focalValue: float
         else:
             discard
-    ShadingType* = enum
-        flat,
-        gouraud,
-        phong
 
 proc `$`(v: varyNode): string =
     &"(name: {v.name}, value: {v.value})"
@@ -520,7 +516,7 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
             addBox(polygons, i.boxd0[0], i.boxd0[1], i.boxd0[2], i.boxd1[0], i.boxd1[1], i.boxd1[2])
             mul(cs[^1], polygons)
             if i.boxConstants == nil:
-                drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+                drawPolygons(polygons, normals, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
                 var nColor: Color
                 nColor.red = (i.boxConstants.c.red)
@@ -530,14 +526,14 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                     nAmbient: tuple = (i.boxConstants.c.r[0], i.boxConstants.c.g[0], i.boxConstants.c.b[0])
                     nDiffuse: tuple = (i.boxConstants.c.r[1], i.boxConstants.c.g[1], i.boxConstants.c.b[1])
                     nSpec: tuple = (i.boxConstants.c.r[2], i.boxConstants.c.g[2], i.boxConstants.c.b[2])
-                drawPolygons(polygons, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
+                drawPolygons(polygons, normals, shadingType, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
             polygons = newMatrix(0,0)
         of sphere:
             addSphere(polygons, i.sphered[0], i.sphered[1], i.sphered[2], i.spherer, 1)
             mul(cs[^1], polygons)
             # echo i.sphereConstants == nil
             if i.sphereConstants == nil:
-                drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+                drawPolygons(polygons, normals, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
                 var nColor: Color
                 nColor.red = (i.sphereConstants.c.red)
@@ -547,13 +543,13 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                     nAmbient: tuple = (i.sphereConstants.c.r[0], i.sphereConstants.c.g[0], i.sphereConstants.c.b[0])
                     nDiffuse: tuple = (i.sphereConstants.c.r[1], i.sphereConstants.c.g[1], i.sphereConstants.c.b[1])
                     nSpec: tuple = (i.sphereConstants.c.r[2], i.sphereConstants.c.g[2], i.sphereConstants.c.b[2])
-                drawPolygons(polygons, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
+                drawPolygons(polygons, normals, shadingType, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
             polygons = newMatrix(0,0)
         of torus:
             addTorus(polygons, i.torusd[0], i.torusd[1], i.torusd[2], i.torusr0, i.torusr1, 1)
             mul(cs[^1], polygons)
             if i.torusConstants == nil:
-                drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+                drawPolygons(polygons, normals, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
                 var nColor: Color
                 nColor.red = (i.torusConstants.c.red)
@@ -563,13 +559,13 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                     nAmbient: tuple = (i.torusConstants.c.r[0], i.torusConstants.c.g[0], i.torusConstants.c.b[0])
                     nDiffuse: tuple = (i.torusConstants.c.r[1], i.torusConstants.c.g[1], i.torusConstants.c.b[1])
                     nSpec: tuple = (i.torusConstants.c.r[2], i.torusConstants.c.g[2], i.torusConstants.c.b[2])
-                drawPolygons(polygons, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
+                drawPolygons(polygons, normals, shadingType, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
             polygons = newMatrix(0,0)
         of mesh:
             addMesh(polygons, normals, i.meshName)
             mul(cs[^1], polygons)
             if i.meshConstants == nil:
-                drawPolygons(polygons, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+                drawPolygons(polygons, normals, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
                 var nColor: Color
                 nColor.red = (i.meshConstants.c.red)
@@ -579,7 +575,7 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                     nAmbient: tuple = (i.meshConstants.c.r[0], i.meshConstants.c.g[0], i.meshConstants.c.b[0])
                     nDiffuse: tuple = (i.meshConstants.c.r[1], i.meshConstants.c.g[1], i.meshConstants.c.b[1])
                     nSpec: tuple = (i.meshConstants.c.r[2], i.meshConstants.c.g[2], i.meshConstants.c.b[2])
-                drawPolygons(polygons, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
+                drawPolygons(polygons, normals, shadingType, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
             polygons = newMatrix(0,0)
         of Opkind.move:
             var

@@ -1,0 +1,6 @@
+shading phong
+move 250 250 0
+scale 2 2 2
+mesh :teapot.obj
+display
+save teapot.png
