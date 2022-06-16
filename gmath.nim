@@ -107,7 +107,9 @@ proc getTLighting*(normal, view: tuple, alight: Color, light: Matrix, areflect, 
     # echo "dred " & $d.red
     # echo "dgreen " & $d.green
         mapKd = maps[1]
-        td = mapKd[int(tx * 255)][int(ty * 255)]
+        xs = mapKd[0].len
+        ys = mapKd[].len
+        td = mapKd[int(tx * float(xs-1))][int(ty * float(ys-1))]
     var x = a + d
     clampTColor(x)
     result = x * td + s

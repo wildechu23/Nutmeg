@@ -5,4 +5,4 @@ newmtl material0
 Ka 1.000000 1.000000 1.000000
 Kd 1.000000 1.000000 1.000000
 Ks 0.000000 0.000000 0.000000
-map_Kd res/noise.ppm
+map_Kd res/caustic.ppm
