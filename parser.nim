@@ -550,6 +550,7 @@ proc execOp*(symTab: var seq[SymTab], opTab: seq[Command], knobs: seq[seq[varyNo
             mul(cs[^1], m)
             cs[^1] = m
         of rotate:
+            # echo "ha"
             var d = i.degrees
             if i.rotatep != nil:
                 let k = knobs[getKnobNode(knobs, numFrames, i.rotatep.name)]
@@ -568,7 +569,7 @@ proc execOp*(symTab: var seq[SymTab], opTab: seq[Command], knobs: seq[seq[varyNo
             ns[^1] = n
         of Opkind.push:
             cs.push(cs[^1])
-            cs.push(ns[^1])
+            ns.push(ns[^1])
         of Opkind.pop:
             discard cs.pop
             discard ns.pop

@@ -539,6 +539,8 @@ proc drawGScanline*(x0: int, z0: float, x1: int, z1: float, y: int, s: var Scree
         plot(s, zbuffer, ct, x, y, z)
         z += dz
         c = c + dc
+        tx += dtx
+        ty += dty
 
 proc drawPScanline*(x0: int, z0: float, x1: int, z1: float, y: int, s: var Screen, zbuffer: var ZBuffer, n0, n1: tuple, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     var 
@@ -574,6 +576,61 @@ proc drawPScanline*(x0: int, z0: float, x1: int, z1: float, y: int, s: var Scree
         plot(s, zbuffer, c, x, y, z)
         z += dz
         n = n + dn
+
+proc drawPScanline*(x0: int, z0: float, x1: int, z1: float, y: int, s: var Screen, zbuffer: var ZBuffer, n0, n1: tuple, tx0, tx1, ty0, ty1: float, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple, maps: array[3, TextureArrayRef]) =
+    var 
+        xa: int
+        xb: int
+        za: float
+        zb: float
+        z: float
+        na: (float, float, float)
+        nb: (float, float, float)
+        n: (float, float, float)
+        txa: float
+        txb: float
+        tya: float
+        tyb: float
+        tx: float
+        ty: float
+    if x0 > x1:
+        xa = x1
+        xb = x0
+        za = z1
+        zb = z0
+        na = n1
+        nb = n0
+        txa = tx1
+        txb = tx0
+        tya = ty1
+        tyb = ty0
+    else:
+        xa = x0
+        xb = x1
+        za = z0
+        zb = z1
+        na = n0
+        nb = n1
+        txa = tx0
+        txb = tx1
+        tya = ty0
+        tyb = ty1
+    # deleted the + 1 in xb - xa + 1
+    let dz: float = (if (xb - xa) != 0: (zb - za) / float(xb - xa) else: 0)
+    let dn: tuple = (if not cmp(na, nb): (nb - na) / float(xb - xa) else: (red: 0.0, green: 0.0, blue: 0.0))
+    let dtx: float = (if (xb - xa) != 0: (txb - txa) / float(xb - xa) else: 0)
+    let dty: float = (if (xb - xa) != 0: (tyb - tya) / float(xb - xa) else: 0)
+    z = za
+    n = na
+    tx = txa
+    ty = tya
+    for x in xa..xb:
+        let ct = getTLighting(n, view, ambient, light, areflect, dreflect, sreflect, tx, ty, maps)
+        plot(s, zbuffer, ct, x, y, z)
+        z += dz
+        n = n + dn
+        tx += dtx
+        ty += dty
 
 proc scanLine(m: Matrix, i: int, s: var Screen, zb: var ZBuffer, c: Color) =
     var 
@@ -678,7 +735,7 @@ proc scanLine(m: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], i:
         dx1 = (if dist1 > 0: (p[1][0] - p[0][0]) / float(dist1) else: 0)
         dz1 = (if dist1 > 0: (p[1][2] - p[0][2]) / float(dist1) else: 0)
         dtx1 = (if dist1 > 0: (qtx1 - qtx0) / float(dist1) else: 0)
-        dty1 = (if dist0 > 0: (qty1 - qty0) / float(dist1) else: 0)
+        dty1 = (if dist1 > 0: (qty1 - qty0) / float(dist1) else: 0)
 
     while y <= int(p[2][1]):
         if flip == 0 and y >= int(p[1][1]):
@@ -686,7 +743,7 @@ proc scanLine(m: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], i:
             dx1 = (if dist2 > 0: (p[2][0] - p[1][0]) / float(dist2) else: 0)
             dz1 = (if dist2 > 0: (p[2][2] - p[1][2]) / float(dist2) else: 0)
             dtx1 = (if dist2 > 0: (qtx2 - qtx1) / float(dist2) else: 0)
-            dty1 = (if dist0 > 0: (qty2 - qty1) / float(dist2) else: 0)
+            dty1 = (if dist2 > 0: (qty2 - qty1) / float(dist2) else: 0)
             x1 = p[1][0]
             z1 = p[1][2]
             tx1 = qtx1
@@ -832,7 +889,7 @@ proc gScanLine(m, n: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab]
         dz1 = (if dist1 > 0: (p[1][2] - p[0][2]) / float(dist1) else: 0)
         dc1 = (if dist1 > 0: (i1 - i0) / float(dist1) else: (red: 0.0, green: 0.0, blue: 0.0))
         dtx1 = (if dist1 > 0: (qtx1 - qtx0) / float(dist1) else: 0)
-        dty1 = (if dist0 > 0: (qty1 - qty0) / float(dist1) else: 0)
+        dty1 = (if dist1 > 0: (qty1 - qty0) / float(dist1) else: 0)
 
     while y <= int(p[2][1]):
         if flip == 0 and y >= int(p[1][1]):
@@ -841,7 +898,7 @@ proc gScanLine(m, n: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab]
             dz1 = (if dist2 > 0: (p[2][2] - p[1][2]) / float(dist2) else: 0)
             dc1 = (if dist2 > 0: (i2 - i1) / float(dist2) else: (red: 0.0, green: 0.0, blue: 0.0))
             dtx1 = (if dist2 > 0: (qtx2 - qtx1) / float(dist2) else: 0)
-            dty1 = (if dist0 > 0: (qty2 - qty1) / float(dist2) else: 0)
+            dty1 = (if dist2 > 0: (qty2 - qty1) / float(dist2) else: 0)
             x1 = p[1][0]
             z1 = p[1][2]
             c1 = i1
@@ -919,6 +976,99 @@ proc pScanLine(m, n: Matrix, i: int, s: var Screen, zb: var ZBuffer, view: tuple
         nx1 = nx1 + dn1
         y += 1
 
+proc pScanLine(m, n: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], i: int, s: var Screen, zb: var ZBuffer, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
+    var 
+        p: Matrix = m[3*i .. 3*i + 2]
+        q = newOrderedTable[seq[float], (seq[float], (string, float, float))]()
+        flip = 0
+        maps: array[3, TextureArrayRef]
+
+    let 
+        mat: SymTab = findName(symTab, t[2*i][0])
+
+    for j in 0..<3:
+        q[m[3*i + j]] = (n[3*i + j], t[3*i + j])
+
+    if mat.c.mapKa != "":
+        maps[0] = readPpm(mat.c.mapKa)
+    if mat.c.mapKd != "":
+        maps[1] = readPpm(mat.c.mapKd)
+    if mat.c.mapKs != "":
+        maps[2] = readPpm(mat.c.mapKs)
+
+    p.sort(cmpY)
+    # q.sort(cmpHashY)
+    # bottom: p[0], middle: p[1], top: p[2]
+
+    let 
+        n0 = (q[p[0]][0][0], q[p[0]][0][1], q[p[0]][0][2])
+        n1 = (q[p[1]][0][0], q[p[1]][0][1], q[p[1]][0][2])
+        n2 = (q[p[2]][0][0], q[p[2]][0][1], q[p[2]][0][2])
+        qtx0 = q[p[0]][1][1]
+        qty0 = q[p[0]][1][2]
+        qtx1 = q[p[1]][1][1]
+        qty1 = q[p[1]][1][2]
+        qtx2 = q[p[2]][1][1]
+        qty2 = q[p[2]][1][2]
+
+    var
+        x0 = p[0][0]
+        x1 = p[0][0]
+        z0 = p[0][2]
+        z1 = p[0][2]
+        y: int = int(p[0][1])
+        nx0 = n0
+        nx1 = n0
+        tx0 = qtx0
+        tx1 = qtx0
+        ty0 = qty0
+        ty1 = qty0
+
+
+    let
+        dist0 = int(p[2][1]) - y 
+        dist1 = int(p[1][1]) - y 
+        dist2 = int(p[2][1]) - int(p[1][1]) 
+
+        dx0 = (if dist0 > 0: (p[2][0] - p[0][0]) / float(dist0) else: 0)
+        dz0 = (if dist0 > 0: (p[2][2] - p[0][2]) / float(dist0) else: 0)
+        dn0 = (if dist0 > 0: (n2 - n0) / float(dist0) else: (0.0, 0.0, 0.0))
+        dtx0 = (if dist0 > 0: (qtx2 - qtx0) / float(dist0) else: 0)
+        dty0 = (if dist0 > 0: (qty2 - qty0) / float(dist0) else: 0)
+        
+    var
+        dx1 = (if dist1 > 0: (p[1][0] - p[0][0]) / float(dist1) else: 0)
+        dz1 = (if dist1 > 0: (p[1][2] - p[0][2]) / float(dist1) else: 0)
+        dn1 = (if dist1 > 0: (n1 - n0) / float(dist1) else: (0.0, 0.0, 0.0))
+        dtx1 = (if dist1 > 0: (qtx1 - qtx0) / float(dist1) else: 0)
+        dty1 = (if dist1 > 0: (qty1 - qty0) / float(dist1) else: 0)
+
+    while y <= int(p[2][1]):
+        if flip == 0 and y >= int(p[1][1]):
+            flip = 1
+            dx1 = (if dist2 > 0: (p[2][0] - p[1][0]) / float(dist2) else: 0)
+            dz1 = (if dist2 > 0: (p[2][2] - p[1][2]) / float(dist2) else: 0)
+            dn1 = (if dist2 > 0: (n2 - n1) / float(dist2) else: (0.0, 0.0, 0.0))
+            dtx1 = (if dist2 > 0: (qtx2 - qtx1) / float(dist2) else: 0)
+            dty1 = (if dist2 > 0: (qty2 - qty1) / float(dist2) else: 0)
+            x1 = p[1][0]
+            z1 = p[1][2]
+            nx1 = n1
+            tx1 = qtx1
+            ty1 = qty1
+        drawPScanline(int(x0), z0, int(x1), z1, y, s, zb, nx0, nx1, tx0, tx1, ty0, ty1, view, light, ambient, areflect, dreflect, sreflect, maps)
+        x0 += dx0
+        x1 += dx1
+        z0 += dz0
+        z1 += dz1
+        nx0 = nx0 + dn0
+        nx1 = nx1 + dn1
+        y += 1
+        tx0 += dtx0
+        tx1 += dtx1
+        ty0 += dty0
+        ty1 += dty1
+
 proc drawGPolygons*(m, n: var Matrix, s: var Screen, zb: var ZBuffer, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     # echo m
     for i in 0..<(m.len div 3):
@@ -945,7 +1095,7 @@ proc drawPPolygons*(m, n: var Matrix, t: seq[(string, float, float)], symTab: se
     for i in 0..<(m.len div 3):
         let fnormal = ((n[3*i][0] + n[3*i + 1][0] + n[3*i + 2][0]) / 3, (n[3*i][1] + n[3*i + 1][1] + n[3*i + 2][1]) / 3, (n[3*i][2] + n[3*i + 1][2] + n[3*i + 2][2]) / 3)
         if dotProduct(fnormal, (0.0, 0.0, 1.0)) > 0:
-            pScanLine(m, n, i, s, zb, view, light, ambient, areflect, dreflect, sreflect)
+            pScanLine(m, n, t, symTab, i, s, zb, view, light, ambient, areflect, dreflect, sreflect)
 
 proc drawPolygons*(m, n: var Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], shadingType: ShadingType, s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     if t.len > 0:
@@ -973,11 +1123,7 @@ proc drawPolygons*(m, n: var Matrix, t: seq[(string, float, float)], symTab: seq
             drawPPolygons(m, n, s, zb, view, light, ambient, areflect, dreflect, sreflect)
         of flat:
             for i in 0..<(m.len div 3):
-                let
-                    a = m[3*i]
-                    b = m[3*i + 1]
-                    c = m[3*i + 2]
-                    n = calculateNormal(m, 3*i)
+                let n = calculateNormal(m, 3*i)
                 if dotProduct(n, (0.0, 0.0, 1.0)) > 0:
                     # drawLine(int(a[0]), int(a[1]), a[2], int(b[0]), int(b[1]), b[2], s, zb, color)
                     # drawLine(int(b[0]), int(b[1]), b[2], int(c[0]), int(c[1]), c[2], s, zb, color)

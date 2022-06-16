@@ -28,9 +28,9 @@ proc main() =
     ambient.blue = 50
 
     light = newMatrix(2, 3)
-    light[0][0] = 0.5
+    light[0][0] = -0.5
     light[0][1] = 0.75
-    light[0][2] = 1
+    light[0][2] = 2
 
     light[1][0] = 255
     light[1][1] = 255
@@ -52,7 +52,7 @@ proc main() =
     proc getSymlen(): cint {.importc: "get_symlen", header: "parser.h".}
     proc getOplen(): cint {.importc: "get_oplen", header: "parser.h".}
 
-    parseC("tests/normals.mdl")
+    parseC("tests/texture.mdl")
 
     let 
         c: ptr UncheckedArray[cSymTab] =  getSym()
