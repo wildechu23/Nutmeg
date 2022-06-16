@@ -1,4 +1,4 @@
-import display, draw, matrix, stack, std/strutils, std/osproc, std/strformat
+import display, draw, matrix, stack, std/strutils, std/osproc, std/strformat, symtab
 
 type
     varyNode* = ref object
@@ -28,37 +28,6 @@ type
         name: cstring
         t {.importc: "type".} : cint
         s: cSym
-
-    
-    symKind = enum
-        symMatrix,
-        symConstants,
-        symLight,
-        symValue,
-        symFile,
-        symString
-
-    Constants = object
-        r: array[4, float]
-        g: array[4, float]
-        b: array[4, float]
-        red, green, blue: float
-    
-    Light = object
-        l: array[4, float]
-        c: array[4, float]
-
-    SymTabObj = object
-        name: string
-        case kind: symKind
-        of symMatrix: m: Matrix
-        of symConstants: c: Constants
-        of symLight: l: Light
-        of symValue: value: float
-        of symString: discard
-        of symFile: discard
-
-    SymTab* = ref SymTabObj
 
     cOpLight = object
         p: ptr cSymTab
@@ -345,30 +314,6 @@ proc secondPass*(opTab: seq[Command], numFrames: int): seq[seq[varyNode]] =
                 knobs[getKnobNode(knobs, numFrames, i.varyp.name)] = s
     return knobs
 
-proc printConstants(p: Constants) =
-    echo &"\tRed -\t Ka: {p.r[0]} Kd: {p.r[1]} Ks: {p.r[2]}" 
-    echo &"\tGreen -\t Ka: {p.g[0]} Kd: {p.g[1]} Ks: {p.g[2]}"
-    echo &"\tBlue -\t Ka: {p.b[0]} Kd: {p.b[1]} Ks: {p.b[2]}"
-
-proc printLight(p: Light) =
-    echo &"\tLocation -\t {p.l[0]} {p.l[1]} {p.l[2]}"
-    echo &"\tBrightness -\t r:{p.c[0]} g:{p.c[1]} b:{p.c[2]}"
-
-
-proc printSymTab*(p: seq[SymTab]) =
-    for i in p:
-        case i.kind:
-        of symMatrix:
-            printMatrix(i.m)
-        of symConstants:
-            printConstants(i.c)
-        of symLight:
-            printLight(i.l)
-        of symValue:
-            echo i.value
-        of symFile, symString:
-            echo i.name
-
 proc cSymtoSym*(ctab: cSymTab): SymTab = 
     var s: SymTab
     new(s)
@@ -508,7 +453,7 @@ proc cOptoOp*(otab: cCommand, symTab: seq[SymTab]): Command =
         discard
     return newOp
 
-proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: int, edges, polygons, normals: var Matrix, shadingType: var ShadingType, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
+proc execOp*(symTab: var seq[SymTab], opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: int, edges, polygons, normals: var Matrix, tCoords: var seq[(string, float, float)], shadingType: var ShadingType, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     for i in opTab:
         # if i.opcode == 265:
         case i.kind:
@@ -516,7 +461,7 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
             addBox(polygons, i.boxd0[0], i.boxd0[1], i.boxd0[2], i.boxd1[0], i.boxd1[1], i.boxd1[2])
             mul(cs[^1], polygons)
             if i.boxConstants == nil:
-                drawPolygons(polygons, normals, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+                drawPolygons(polygons, normals, tCoords, symTab, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
                 var nColor: Color
                 nColor.red = (i.boxConstants.c.red)
@@ -526,14 +471,14 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                     nAmbient: tuple = (i.boxConstants.c.r[0], i.boxConstants.c.g[0], i.boxConstants.c.b[0])
                     nDiffuse: tuple = (i.boxConstants.c.r[1], i.boxConstants.c.g[1], i.boxConstants.c.b[1])
                     nSpec: tuple = (i.boxConstants.c.r[2], i.boxConstants.c.g[2], i.boxConstants.c.b[2])
-                drawPolygons(polygons, normals, shadingType, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
+                drawPolygons(polygons, normals, tCoords, symTab, shadingType, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
             polygons = newMatrix(0,0)
         of sphere:
             addSphere(polygons, i.sphered[0], i.sphered[1], i.sphered[2], i.spherer, 1)
             mul(cs[^1], polygons)
             # echo i.sphereConstants == nil
             if i.sphereConstants == nil:
-                drawPolygons(polygons, normals, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+                drawPolygons(polygons, normals, tCoords, symTab, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
                 var nColor: Color
                 nColor.red = (i.sphereConstants.c.red)
@@ -543,13 +488,13 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                     nAmbient: tuple = (i.sphereConstants.c.r[0], i.sphereConstants.c.g[0], i.sphereConstants.c.b[0])
                     nDiffuse: tuple = (i.sphereConstants.c.r[1], i.sphereConstants.c.g[1], i.sphereConstants.c.b[1])
                     nSpec: tuple = (i.sphereConstants.c.r[2], i.sphereConstants.c.g[2], i.sphereConstants.c.b[2])
-                drawPolygons(polygons, normals, shadingType, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
+                drawPolygons(polygons, normals, tCoords, symTab, shadingType, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
             polygons = newMatrix(0,0)
         of torus:
             addTorus(polygons, i.torusd[0], i.torusd[1], i.torusd[2], i.torusr0, i.torusr1, 1)
             mul(cs[^1], polygons)
             if i.torusConstants == nil:
-                drawPolygons(polygons, normals, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+                drawPolygons(polygons, normals, tCoords, symTab, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
                 var nColor: Color
                 nColor.red = (i.torusConstants.c.red)
@@ -559,13 +504,13 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                     nAmbient: tuple = (i.torusConstants.c.r[0], i.torusConstants.c.g[0], i.torusConstants.c.b[0])
                     nDiffuse: tuple = (i.torusConstants.c.r[1], i.torusConstants.c.g[1], i.torusConstants.c.b[1])
                     nSpec: tuple = (i.torusConstants.c.r[2], i.torusConstants.c.g[2], i.torusConstants.c.b[2])
-                drawPolygons(polygons, normals, shadingType, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
+                drawPolygons(polygons, normals, tCoords, symTab, shadingType, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
             polygons = newMatrix(0,0)
         of mesh:
-            addMesh(polygons, normals, i.meshName)
+            addMesh(polygons, normals, tCoords, i.meshName, symTab)
             mul(cs[^1], polygons)
             if i.meshConstants == nil:
-                drawPolygons(polygons, normals, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+                drawPolygons(polygons, normals, tCoords, symTab, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
                 var nColor: Color
                 nColor.red = (i.meshConstants.c.red)
@@ -575,7 +520,7 @@ proc execOp*(opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: 
                     nAmbient: tuple = (i.meshConstants.c.r[0], i.meshConstants.c.g[0], i.meshConstants.c.b[0])
                     nDiffuse: tuple = (i.meshConstants.c.r[1], i.meshConstants.c.g[1], i.meshConstants.c.b[1])
                     nSpec: tuple = (i.meshConstants.c.r[2], i.meshConstants.c.g[2], i.meshConstants.c.b[2])
-                drawPolygons(polygons, normals, shadingType, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
+                drawPolygons(polygons, normals, tCoords, symTab, shadingType, s, zb, nColor, view, light, ambient, nAmbient, nDiffuse, nSpec)
             polygons = newMatrix(0,0)
         of Opkind.move:
             var

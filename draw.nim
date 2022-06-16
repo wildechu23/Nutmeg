@@ -1,4 +1,4 @@
-import display, gmath, matrix, std/algorithm, std/math, std/random, std/tables, strutils
+import display, gmath, matrix, std/algorithm, std/math, std/tables, strutils, symtab
 
 type
     Vertex = tuple[x, y, z: float]
@@ -31,6 +31,11 @@ proc addNormals(n: var Matrix, x0, y0, z0, x1, y1, z1, x2, y2, z2: float) =
     n.addPoint x0, y0, z0
     n.addPoint x1, y1, z1
     n.addPoint x2, y2, z2
+
+proc addTCoords(t: var seq[(string, float, float)], s: string, x0, y0, x1, y1, x2, y2: float) =
+    t.add((s, x0, y0))
+    t.add((s, x1, y1))
+    t.add((s, x2, y2))
 
 proc addCircle*(m: var Matrix, cx, cy, cz, r, step: float) =
     var 
@@ -173,31 +178,88 @@ proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[0][0], p[0][1], p[0][2], p[i][0], p[i][1], p[i][2])
     addPolygon(m, p[i+n-1][0], p[i+n-1][1], p[i+n-1][2], p[n-1][0], p[n-1][1], p[n-1][2], p[0][0], p[0][1], p[0][2])
 
-proc addMesh*(m: var Matrix, n: var Matrix, path: string) =
+proc addMtl*(path: string, s: var seq[SymTab]) =
+    let f = open(path, fmRead)
+    var 
+        line: string
+        newMat: SymTab
+    while(f.readLine(line)):
+        let arg: seq[string] = line.splitWhitespace()
+        if arg.len > 0:
+            case arg[0]:
+            of "newmtl":
+                if newMat != nil:
+                    s.add(newMat)
+                new(newMat)
+                newMat.name = arg[1]
+                newMat.kind = symConstants
+                newMat.c = Constants(r: [0.0, 0.0, 0.0, 0.0], g: [0.0, 0.0, 0.0, 0.0], b: [0.0, 0.0, 0.0, 0.0], red: 0.0, green: 0.0, blue: 0.0)
+            of "Ka":
+                newMat.c.r[0] = parseFloat(arg[1])
+                newMat.c.g[0] = parseFloat(arg[2])
+                newMat.c.b[0] = parseFloat(arg[3])
+            of "Kd":
+                newMat.c.r[1] = parseFloat(arg[1])
+                newMat.c.g[1] = parseFloat(arg[2])
+                newMat.c.b[1] = parseFloat(arg[3])
+            of "Ks":
+                newMat.c.r[2] = parseFloat(arg[1])
+                newMat.c.g[2] = parseFloat(arg[2])
+                newMat.c.b[2] = parseFloat(arg[3])
+            of "map_Ka":
+                newMat.c.mapKa = arg[1]
+            of "map_Kd":
+                newMat.c.mapKd = arg[1]
+            of "map_Ks":
+                newMat.c.mapKs = arg[1]
+            else:
+                discard
+    
+    if newMat != nil:
+        s.add(newMat)
+
+
+proc addMesh*(m, n: var Matrix, t: var seq[(string, float, float)], path: string, s: var seq[SymTab]) =
     let f = open(path, fmRead)
     defer: f.close()
     var 
         line: string
         v: seq[Vertex]
+        currentMtl: string = ""
+        vt: seq[(float, float)]
         vn: seq[Vertex]
     while(f.readLine(line)):
         let arg: seq[string] = line.splitWhitespace()
         # echo arg
         if arg.len > 0:
             case arg[0]:
+            of "mtllib":
+                addMtl(arg[1], s)
+            of "usemtl":
+                currentMtl = arg[1]
             of "v":
                 v.add((parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3])))
+            of "vt":
+                vt.add((parseFloat(arg[1]), parseFloat(arg[2])))
             of "vn":
                 vn.add((parseFloat(arg[1]), parseFloat(arg[2]), parseFloat(arg[3])))
             of "f":
-                var verts: seq[int]
+                var 
+                    verts: seq[int]
+                    texs: seq[int]
+                    norms: seq[int]
                 for i in arg[1..^1]:
                     let info = i.split("/")
                     verts.add(parseInt(info[0]) - 1)
+                    if info.len > 1 and info[1] != "":
+                        texs.add(parseInt(info[1]) - 1)
+                    if info.len > 2:
+                        norms.add(parseInt(info[2]) - 1)
                 case arg.len:
                 of 4:
                     addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[1]][0], v[verts[1]][1], v[verts[1]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2])
-                    addNormals(n, vn[verts[0]][0], vn[verts[0]][1], vn[verts[0]][2], vn[verts[1]][0], vn[verts[1]][1], vn[verts[1]][2], vn[verts[2]][0], vn[verts[2]][1], vn[verts[2]][2])
+                    addNormals(n, vn[norms[0]][0], vn[norms[0]][1], vn[norms[0]][2], vn[norms[1]][0], vn[norms[1]][1], vn[norms[1]][2], vn[norms[2]][0], vn[norms[2]][1], vn[norms[2]][2])
+                    addTCoords(t, currentMtl, vt[texs[0]][0], vt[texs[0]][1], vt[texs[1]][0], vt[texs[1]][1], vt[texs[2]][0], vt[texs[2]][1])
                 of 5:
                     addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[1]][0], v[verts[1]][1], v[verts[1]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2])
                     addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2], v[verts[3]][0], v[verts[3]][1], v[verts[3]][2])
@@ -314,29 +376,59 @@ proc cmpY(p, q: seq[float]): int =
 proc cmpHashY(p, q: (seq[float], seq[float])): int =
     cmp(p[0][1], q[0][1])
 
-proc drawScanline(x0: int, z0: float, x1: int, z1: float, y: int, s: var Screen, zbuffer: var ZBuffer, c: Color) =
+proc cmpHashY(p, q: (seq[float], (string, float, float))): int =
+    cmp(p[0][1], q[0][1])
+
+proc drawScanline(x0: int, z0: float, x1: int, z1: float, y: int, s: var Screen, zbuffer: var ZBuffer, n: tuple, tx0, tx1, ty0, ty1: float, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple, maps: array[3, TextureArrayRef]) =
     var 
         xa: int
         xb: int
         za: float
         zb: float
         z: float
+        txa: float
+        txb: float
+        tya: float
+        tyb: float
+        tx: float
+        ty: float
     if x0 > x1:
         xa = x1
         xb = x0
         za = z1
         zb = z0
+        txa = tx1
+        txb = tx0
+        tya = ty1
+        tyb = ty0
     else:
         xa = x0
         xb = x1
         za = z0
         zb = z1
+        txa = tx0
+        txb = tx1
+        tya = ty0
+        tyb = ty1
     # deleted the + 1 in xb - xa + 1
     let dz: float = (if (xb - xa) != 0: (zb - za) / float(xb - xa) else: 0)
+    let dtx: float = (if (xb - xa) != 0: (txb - txa) / float(xb - xa) else: 0)
+    let dty: float = (if (xb - xa) != 0: (tyb - tya) / float(xb - xa) else: 0)
     z = za
+    tx = txa
+    ty = tya
+    # echo "txa: " & $txa
+    # echo "txb: " & $txb
+    # echo "dtx: " & $dtx
+    # echo "tya:" & $tya
+    # echo "tyb:" & $tyb
     for x in xa..xb:
-        plot(s, zbuffer, c, x, y, z)
+        # echo tx
+        let ct = getTLighting(n, view, ambient, light, areflect, dreflect, sreflect, tx, ty, maps)
+        plot(s, zbuffer, ct, x, y, z)
         z += dz
+        tx += dtx
+        ty += dty
 
 proc drawGScanline*(x0: int, z0: float, x1: int, z1: float, y: int, s: var Screen, zbuffer: var ZBuffer, i0, i1: Color) =
     var 
@@ -408,13 +500,38 @@ proc drawPScanline*(x0: int, z0: float, x1: int, z1: float, y: int, s: var Scree
         n = n + dn
 
 
-proc scanLine(m: Matrix, i: int, s: var Screen, zb: var ZBuffer, c: Color) =
+proc scanLine(m: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], i: int, s: var Screen, zb: var ZBuffer, n: tuple, c: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     var 
         p: Matrix = m[3*i .. 3*i + 2]
+        q = newOrderedTable[seq[float], (string, float, float)]()
         flip = 0
+        maps: array[3, TextureArrayRef]
+
+    let 
+        mat: SymTab = findName(symTab, t[2*i][0])
+
+        
+    for j in 0..<3:
+        q[m[3*i + j]] = t[3*i + j]
+    
+    if mat.c.mapKa != "":
+        maps[0] = readPpm(mat.c.mapKa)
+    if mat.c.mapKd != "":
+        maps[1] = readPpm(mat.c.mapKd)
+    if mat.c.mapKs != "":
+        maps[2] = readPpm(mat.c.mapKs)
         
     p.sort(cmpY)
+    q.sort(cmpHashY)
     # bottom: p[0], middle: p[1], top: p[2]
+
+    let
+        qtx0 = q[p[0]][1]
+        qty0 = q[p[0]][2]
+        qtx1 = q[p[1]][1]
+        qty1 = q[p[1]][2]
+        qtx2 = q[p[2]][1]
+        qty2 = q[p[2]][2]
 
     var
         x0 = p[0][0]
@@ -422,32 +539,51 @@ proc scanLine(m: Matrix, i: int, s: var Screen, zb: var ZBuffer, c: Color) =
         z0 = p[0][2]
         z1 = p[0][2]
         y: int = int(p[0][1])
+        tx0 = qtx0
+        tx1 = qtx0
+        ty0 = qty0
+        ty1 = qty0
 
     let
         dist0 = int(p[2][1]) - y + 1
         dist1 = int(p[1][1]) - y + 1
         dist2 = int(p[2][1]) - int(p[1][1]) + 1
 
+        # distt0 = qty2 - qty0 + 1
+        # distt1 = qty1 - qty0 + 1
+        # distt2 = qty2 - qty1 + 1
+
         dx0 = (if dist0 > 0: (p[2][0] - p[0][0]) / float(dist0) else: 0)
         dz0 = (if dist0 > 0: (p[2][2] - p[0][2]) / float(dist0) else: 0)
+        dtx0 = (if dist0 > 0: (qtx2 - qtx0) / float(dist0) else: 0)
+        dty0 = (if dist0 > 0: (qty2 - qty0) / float(dist0) else: 0)
 
     var
         dx1 = (if dist1 > 0: (p[1][0] - p[0][0]) / float(dist1) else: 0)
         dz1 = (if dist1 > 0: (p[1][2] - p[0][2]) / float(dist1) else: 0)
-
+        dtx1 = (if dist1 > 0: (qtx1 - qtx0) / float(dist1) else: 0)
+        dty1 = (if dist0 > 0: (qty1 - qty0) / float(dist1) else: 0)
     while y <= int(p[2][1]):
         if flip == 0 and y >= int(p[1][1]):
             flip = 1
             dx1 = (if dist2 > 0: (p[2][0] - p[1][0]) / float(dist2) else: 0)
             dz1 = (if dist2 > 0: (p[2][2] - p[1][2]) / float(dist2) else: 0)
+            dtx1 = (if dist2 > 0: (qtx2 - qtx1) / float(dist2) else: 0)
+            dty1 = (if dist0 > 0: (qty2 - qty1) / float(dist2) else: 0)
             x1 = p[1][0]
             z1 = p[1][2]
-        drawScanline(int(x0), z0, int(x1), z1, y, s, zb, c)
+            tx1 = qtx1
+            ty1 = qty1
+        drawScanline(int(x0), z0, int(x1), z1, y, s, zb, c, tx0, tx1, ty0, ty1, view, light, ambient, areflect, dreflect, sreflect, maps)
         x0 += dx0
         x1 += dx1
         z0 += dz0
         z1 += dz1
         y += 1
+        tx0 += dtx0
+        tx1 += dtx1
+        ty0 += dty0
+        ty1 += dty1
 
 proc gScanLine(m, n: Matrix, i: int, s: var Screen, zb: var ZBuffer, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     var 
@@ -601,7 +737,7 @@ proc drawPPolygons*(m, n: var Matrix, s: var Screen, zb: var ZBuffer, view: tupl
             # let il: Color = getLighting(n, view, ambient, light, areflect, dreflect, sreflect)
             pScanLine(m, n, i, s, zb, view, light, ambient, areflect, dreflect, sreflect)
 
-proc drawPolygons*(m, n: var Matrix, shadingType: ShadingType, s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
+proc drawPolygons*(m, n: var Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], shadingType: ShadingType, s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     case shadingType:
     of gouraud:
         drawGPolygons(m, n, s, zb, view, light, ambient, areflect, dreflect, sreflect)
@@ -619,6 +755,6 @@ proc drawPolygons*(m, n: var Matrix, shadingType: ShadingType, s: var Screen, zb
                 # drawLine(int(b[0]), int(b[1]), b[2], int(c[0]), int(c[1]), c[2], s, zb, color)
                 # drawLine(int(c[0]), int(c[1]), c[2], int(a[0]), int(a[1]), a[2], s, zb, color)
                 let il: Color = getLighting(n, view, ambient, light, areflect, dreflect, sreflect)
-                scanLine(m, i, s, zb, il)
+                scanLine(m, t, symTab, i, s, zb, n, il, view, light, ambient, areflect, dreflect, sreflect);
     else:
         discard
