@@ -106,6 +106,7 @@ proc getTLighting*(normal, view: tuple, alight: Color, light: Matrix, areflect, 
         s = calculateSpecular(light, sreflect, view, normal)
     # echo "dred " & $d.red
     # echo "dgreen " & $d.green
+    let
         mapKd = maps[1]
         xs = mapKd[0].len
         ys = mapKd[].len

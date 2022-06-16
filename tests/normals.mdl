@@ -1,5 +1,7 @@
-shading phong
+shading gouraud
 move 250 250 0
+rotate x 45
+rotate y 45
 scale 2 2 2
 mesh :teapot.obj
 display

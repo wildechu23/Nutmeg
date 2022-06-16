@@ -453,7 +453,7 @@ proc cOptoOp*(otab: cCommand, symTab: seq[SymTab]): Command =
         discard
     return newOp
 
-proc execOp*(symTab: var seq[SymTab], opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: int, edges, polygons, normals: var Matrix, tCoords: var seq[(string, float, float)], shadingType: var ShadingType, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
+proc execOp*(symTab: var seq[SymTab], opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: int, edges, polygons, normals: var Matrix, tCoords: var seq[(string, float, float)], shadingType: var ShadingType, ns, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     for i in opTab:
         # if i.opcode == 265:
         case i.kind:
@@ -509,6 +509,7 @@ proc execOp*(symTab: var seq[SymTab], opTab: seq[Command], knobs: seq[seq[varyNo
         of mesh:
             addMesh(polygons, normals, tCoords, i.meshName, symTab)
             mul(cs[^1], polygons)
+            mul(ns[^1], normals)
             if i.meshConstants == nil:
                 drawPolygons(polygons, normals, tCoords, symTab, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
@@ -553,18 +554,24 @@ proc execOp*(symTab: var seq[SymTab], opTab: seq[Command], knobs: seq[seq[varyNo
             if i.rotatep != nil:
                 let k = knobs[getKnobNode(knobs, numFrames, i.rotatep.name)]
                 d *= k[f].value
-            var m = block:
-                case i.axis:
-                of 0: makeRotX(d) 
-                of 1: makeRotY(d) 
-                of 2: makeRotZ(d) 
-                else: raise newException(ValueError, "Axis not x, y, or z")
+            var 
+                m = block:
+                    case i.axis:
+                        of 0: makeRotX(d) 
+                        of 1: makeRotY(d) 
+                        of 2: makeRotZ(d) 
+                        else: raise newException(ValueError, "Axis not x, y, or z")
+                n = m
             mul(cs[^1], m)
             cs[^1] = m
+            mul(ns[^1], n)
+            ns[^1] = n
         of Opkind.push:
             cs.push(cs[^1])
+            cs.push(ns[^1])
         of Opkind.pop:
             discard cs.pop
+            discard ns.pop
         of shading:
             case i.shadingp.name:
             of "flat":
