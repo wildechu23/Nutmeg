@@ -509,7 +509,6 @@ proc execOp*(symTab: var seq[SymTab], opTab: seq[Command], knobs: seq[seq[varyNo
             addMesh(polygons, normals, tCoords, i.meshName, symTab)
             mul(cs[^1], polygons)
             mul(ns[^1], normals)
-            # TODO: SET OTHER CONSTANTS UP
             if i.meshConstants == nil:
                 drawPolygons(polygons, normals, tCoords, symTab, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:
@@ -533,7 +532,9 @@ proc execOp*(symTab: var seq[SymTab], opTab: seq[Command], knobs: seq[seq[varyNo
                 x *= k[f].value
                 y *= k[f].value
                 z *= k[f].value
-            var m: Matrix = makeTranslate(x, y, z)
+            var 
+                m: Matrix = makeTranslate(x, y, z)
+                n = m
             mul(cs[^1], m)
             cs[^1] = m
         of scale:
@@ -546,27 +547,36 @@ proc execOp*(symTab: var seq[SymTab], opTab: seq[Command], knobs: seq[seq[varyNo
                 x *= k[f].value
                 y *= k[f].value
                 z *= k[f].value
-            var m: Matrix = makeScale(x, y, z)
+            var 
+                m: Matrix = makeScale(x, y, z)
+                n = m
             mul(cs[^1], m)
             cs[^1] = m
         of rotate:
             # echo "ha"
-            var d = i.degrees
+            var 
+                d = i.degrees
             if i.rotatep != nil:
-                let k = knobs[getKnobNode(knobs, numFrames, i.rotatep.name)]
+                let 
+                    k = knobs[getKnobNode(knobs, numFrames, i.rotatep.name)]
+                    # l = (if f > 0: k[f-1].value else: 0)
                 d *= k[f].value
+                # echo d
             var 
                 m = block:
                     case i.axis:
                         of 0: makeRotX(d) 
-                        of 1: makeRotY(d) 
+                        of 1: makeRotY(d)
                         of 2: makeRotZ(d) 
                         else: raise newException(ValueError, "Axis not x, y, or z")
                 n = m
+            
             mul(cs[^1], m)
             cs[^1] = m
             mul(ns[^1], n)
             ns[^1] = n
+            # echo cs
+            # echo ns
         of Opkind.push:
             cs.push(cs[^1])
             ns.push(ns[^1])

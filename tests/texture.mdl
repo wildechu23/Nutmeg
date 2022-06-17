@@ -1,8 +1,7 @@
-frames 5
-basename bubba
 shading phong
 move 200 100 0
 scale 100 100 100
-rotate y 90 spin
+rotate y 90
 mesh :bubba.obj
-vary spin 0 4 0 1
+display
+save bubba.png

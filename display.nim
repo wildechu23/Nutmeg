@@ -63,6 +63,11 @@ proc `*`*(a, b: Color): Color =
     result.green = a.green * b.green
     result.blue = a.blue * b.blue
 
+proc `*`*(a: Color, b: float): Color =
+    result.red = a.red * b
+    result.green = a.green * b
+    result.blue = a.blue * b
+
 proc `-`*(a, b: Color): Color =
     result.red = a.red - b.red
     result.green = a.green - b.green

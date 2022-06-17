@@ -263,7 +263,11 @@ proc addMesh*(m, n: var Matrix, t: var seq[(string, float, float)], path: string
                         else:
                             addNormals(n, vn[verts[0]][0], vn[verts[0]][1], vn[verts[0]][2], vn[verts[1]][0], vn[verts[1]][1], vn[verts[1]][2], vn[verts[2]][0], vn[verts[2]][1], vn[verts[2]][2])
                     if vt.len > 0:
-                        addTCoords(t, currentMtl, vt[texs[0]][0], vt[texs[0]][1], vt[texs[1]][0], vt[texs[1]][1], vt[texs[2]][0], vt[texs[2]][1])
+                        if texs.len > 0:
+                            addTCoords(t, currentMtl, vt[texs[0]][0], vt[texs[0]][1], vt[texs[1]][0], vt[texs[1]][1], vt[texs[2]][0], vt[texs[2]][1])
+                        else:
+                            addTCoords(t, currentMtl, -1, -1, -1, -1, -1, -1);
+                
                 of 5:
                     addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[1]][0], v[verts[1]][1], v[verts[1]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2])
                     addPolygon(m, v[verts[0]][0], v[verts[0]][1], v[verts[0]][2], v[verts[2]][0], v[verts[2]][1], v[verts[2]][2], v[verts[3]][0], v[verts[3]][1], v[verts[3]][2])
@@ -575,7 +579,7 @@ proc drawPScanline*(x0: int, z0: float, x1: int, z1: float, y: int, s: var Scree
         nb = n1
     # deleted the + 1 in xb - xa + 1
     let dz: float = (if (xb - xa) != 0: (zb - za) / float(xb - xa) else: 0)
-    let dn: tuple = (if not cmp(na, nb): (nb - na) / float(xb - xa) else: (red: 0.0, green: 0.0, blue: 0.0))
+    let dn: tuple = (if not cmp(na, nb): (nb - na) / float(xb - xa) else: (0.0, 0.0, 0.0))
     z = za
     n = na
     for x in xa..xb:
@@ -624,7 +628,7 @@ proc drawPScanline*(x0: int, z0: float, x1: int, z1: float, y: int, s: var Scree
         tyb = ty1
     # deleted the + 1 in xb - xa + 1
     let dz: float = (if (xb - xa) != 0: (zb - za) / float(xb - xa) else: 0)
-    let dn: tuple = (if not cmp(na, nb): (nb - na) / float(xb - xa) else: (red: 0.0, green: 0.0, blue: 0.0))
+    let dn: tuple = (if not cmp(na, nb): (nb - na) / float(xb - xa) else: (0.0, 0.0, 0.0))
     let dtx: float = (if (xb - xa) != 0: (txb - txa) / float(xb - xa) else: 0)
     let dty: float = (if (xb - xa) != 0: (tyb - tya) / float(xb - xa) else: 0)
     z = za
@@ -1068,7 +1072,7 @@ proc drawGPolygons*(m, n: var Matrix, t: seq[(string, float, float)], symTab: se
             if mat.c.mapKs != "":
                 maps[2] = readPpm(mat.c.mapKs)
 
-            if maps[1] != nil:
+            if maps[1] != nil and t[3*i][1] != -1:
                 gScanLine(m, n, t, symTab, i, s, zb, fnormal, view, light, ambient, ar, dr, sr, maps)
             else:
                 gScanLine(m, n, i, s, zb, view, light, ambient, ar, dr, sr)
@@ -1077,13 +1081,15 @@ proc drawPPolygons*(m, n: var Matrix, s: var Screen, zb: var ZBuffer, view: tupl
     # echo m
     for i in 0..<(m.len div 3):
         let fnormal = ((n[3*i][0] + n[3*i + 1][0] + n[3*i + 2][0]) / 3, (n[3*i][1] + n[3*i + 1][1] + n[3*i + 2][1]) / 3, (n[3*i][2] + n[3*i + 1][2] + n[3*i + 2][2]) / 3)
+        # let norm = calculateNormal(m, 3*i)
         if dotProduct(fnormal, (0.0, 0.0, 1.0)) > 0:
             pScanLine(m, n, i, s, zb, view, light, ambient, areflect, dreflect, sreflect)
 
 proc drawPPolygons*(m, n: var Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], s: var Screen, zb: var ZBuffer, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
-    # echo m
+    echo n[0]
     for i in 0..<(m.len div 3):
-        let fnormal = ((n[3*i][0] + n[3*i + 1][0] + n[3*i + 2][0]) / 3, (n[3*i][1] + n[3*i + 1][1] + n[3*i + 2][1]) / 3, (n[3*i][2] + n[3*i + 1][2] + n[3*i + 2][2]) / 3)
+        let fnormal = ((n[3*i][0] + n[3*i+1][0] + n[3*i+2][0]) / 3, (n[3*i][1] + n[3*i+1][1] + n[3*i+2][1]) / 3, (n[3*i][2] + n[3*i+1][2] + n[3*i+2][2]) / 3)
+        # let norm = calculateNormal(m, 3*i)
         if dotProduct(fnormal, (0.0, 0.0, 1.0)) > 0:
             var maps: array[3, TextureArrayRef]
             let
@@ -1098,7 +1104,7 @@ proc drawPPolygons*(m, n: var Matrix, t: seq[(string, float, float)], symTab: se
             if mat.c.mapKs != "":
                 maps[2] = readPpm(mat.c.mapKs)
             
-            if maps[1] != nil:
+            if maps[1] != nil and t[3*i][1] != -1:
                 pScanLine(m, n, t, symTab, i, s, zb, view, light, ambient, ar, dr, sr, maps)
             else:
                 pScanLine(m, n, i, s, zb, view, light, ambient, ar, dr, sr)  
@@ -1128,7 +1134,7 @@ proc drawPolygons*(m, n: var Matrix, t: seq[(string, float, float)], symTab: seq
                     if mat.c.mapKs != "":
                         maps[2] = readPpm(mat.c.mapKs)
 
-                    if maps[1] != nil:
+                    if maps[1] != nil and t[3*i][1] != -1:
                         scanLine(m, t, symTab, i, s, zb, n, view, light, ambient, ar, dr, sr, maps);
                     else:
                         let il: Color = getLighting(n, view, ambient, light, ar, dr, sr)

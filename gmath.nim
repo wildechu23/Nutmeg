@@ -1,6 +1,6 @@
 import display, matrix, std/math
 
-proc normalize(v: tuple): tuple =
+proc normalize*(v: tuple): tuple =
     let magnitude: float = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
     var r: tuple = (0.0, 0.0, 0.0)
     r[0] = v[0] / magnitude

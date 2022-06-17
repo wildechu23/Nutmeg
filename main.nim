@@ -104,6 +104,7 @@ proc main() =
             clearScreen(s)
             clearZBuffer(zb)
             cs = newStack[Matrix]()
+            ns = newStack[Matrix]()
         discard execCmd(&"convert -delay 1.7 anim/{basename}* {basename}.gif")
     else:
         execOp(symTab, opTab, knobs, 0, nFrames, edges, polygons, normals, t, shadingType, ns, cs, s[], zb[], color, view, light, ambient, areflect, dreflect, sreflect)

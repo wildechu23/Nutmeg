@@ -32,7 +32,6 @@ proc `$`*(m: Matrix): string =
 proc printMatrix*(m: Matrix) =
     echo $m
 
-
 proc mul*(a: Matrix, b: var Matrix) = 
     # echo a.len
     # echo b.len
@@ -47,6 +46,43 @@ proc mul*(a: Matrix, b: var Matrix) =
         for j in 0..<len(b[0]):
             b[i][j] = col[j]
             # echo b[i][j]
+
+# proc invert4x4(m: var Matrix) =
+#     var n: Matrix
+#     m = newSeqWith(4, newSeq[float](4))
+#     n[0][0] = m[1][1]*m[2][2]*m[3][3] - m[1][1]*m[2][3]*m[3][2] - m[2][1]*m[1][2]*m[3][3] + m[2][1]*m[1][3]*m[3][2] + m[3][1]*m[1][2]*m[2][3] - m[3][1]*m[1][3]*m[2][2]
+#     n[1][0] = -m[1][0]*m[2][2]*m[3][3] + m[1][0]*m[2][3]*m[3][2] + m[2][0]*m[1][2]*m[3][3] - m[2][0]*m[1][3]*m[3][2] - m[3][0]*m[1][2]*m[2][3] + m[3][0]*m[1][3]*m[2][2]
+#     n[2][0] = m[1][0]*m[2][1]*m[3][3] - m[1][0]*m[2][3]*m[3][1] - m[2][0]*m[1][1]*m[3][3] + m[2][0]*m[1][3]*m[3][1] + m[3][0]*m[1][1]*m[2][3] - m[3][0]*m[1][3]*m[2][1]
+#     n[3][0] = -m[1][0]*m[2][1]*m[3][2] + m[1][0]*m[2][2]*m[3][1] + m[2][0]*m[1][1]*m[3][2] - m[2][0]*m[1][2]*m[3][1] - m[3][0]*m[1][1]*m[2][2] + m[3][0]*m[2]
+#     let det = m[0][0]
+
+# proc invertRotation(m: var Matrix) =
+#     var n: Matrix = newMatrix()
+#     identMatrix(n)
+#     let 
+#         det = m[0][0]*(m[1][1]*m[2][2] - m[2][1]*m[1][2]) - m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0]) + m[0][2]*(m[1][0]*m[2][1] - m[1][1]*m[2][0])
+#         invdet = 1/det
+#     n[0][0] = (m[1][1]*m[2][2]-m[2][1]*m[1][2]) * invdet
+#     n[1][0] = -(m[0][1]*m[2][2]-m[0][2]*m[2][1]) * invdet
+#     n[2][0] = (m[0][1]*m[1][2]-m[0][2]*m[1][1]) * invdet
+#     n[0][1] = -(m[1][0]*m[2][2]-m[1][2]*m[2][0]) * invdet
+#     n[1][1] = (m[0][0]*m[2][2]-m[0][2]*m[2][0]) * invdet
+#     n[2][1] = -(m[0][0]*m[1][2]-m[1][0]*m[0][2]) * invdet
+#     n[0][2] = (m[1][0]*m[2][1]-m[2][0]*m[1][1]) * invdet
+#     n[1][2] = -(m[0][0]*m[2][1]-m[2][0]*m[0][1]) * invdet
+#     n[2][2] = (m[0][0]*m[1][1]-m[1][0]*m[0][1]) * invdet
+
+proc transposeMatrix*(m: var Matrix) =
+    var n: Matrix = newMatrix()
+    identMatrix(n)
+    for i in 0..<m.len:
+        for j in 0..<m[0].len:
+            n[i][j] = m[j][i];
+    m = n
+
+proc invertRotation(m: var Matrix) =
+    discard
+
 
 proc makeTranslate*(x, y, z: float): Matrix =
     var m: Matrix = newMatrix()
