@@ -54,6 +54,7 @@ proc printSymTab*(p: seq[SymTab]) =
         of symMatrix:
             printMatrix(i.m)
         of symConstants:
+            echo i.name
             printConstants(i.c)
         of symLight:
             printLight(i.l)

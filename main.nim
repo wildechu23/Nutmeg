@@ -1,17 +1,14 @@
 import display, draw, matrix, parser, stack, std/random, std/strformat, std/strutils, std/osproc, os, symtab
 
-
 proc main() =
-    randomize()
-
     var 
-        s: Screen[XRES, YRES]
+        s: ScreenRef[XRES, YRES]
         ambient: Color
         edges, polygons, normals, light: Matrix
         t: seq[(string, float, float)]
         cs: Stack[Matrix]
         ns: Stack[Matrix]
-        zb: ZBuffer[XRES, YRES]
+        zb: ZBufferRef[XRES, YRES]
         view: tuple =  (0.0, 0.0, 1.0)
         areflect: tuple = (0.1, 0.1, 0.1)
         dreflect: tuple = (0.5, 0.5, 0.5)
@@ -28,13 +25,13 @@ proc main() =
     ambient.blue = 50
 
     light = newMatrix(2, 3)
-    light[0][0] = -0.5
-    light[0][1] = 0.75
-    light[0][2] = 2
+    light[0][0] = 0
+    light[0][1] = 20
+    light[0][2] = 10
 
-    light[1][0] = 255
-    light[1][1] = 255
-    light[1][2] = 255
+    light[1][0] = 200
+    light[1][1] = 200
+    light[1][2] = 200
 
     # t = newMatrix()
     cs = newStack[Matrix]()
@@ -42,8 +39,8 @@ proc main() =
     edges = newMatrix(0, 0)
     polygons = newMatrix(0, 0)
     normals = newMatrix(0, 0)
-    clearScreen(s)
-    clearZBuffer(zb)
+    s = newScreen()
+    zb = newZBuffer()
 
     {.compile: "matrix.c", passL: "-lm".}
     proc parseC(path: cstring){.importc: "parseC", header: "y.tab.c".}
@@ -52,7 +49,11 @@ proc main() =
     proc getSymlen(): cint {.importc: "get_symlen", header: "parser.h".}
     proc getOplen(): cint {.importc: "get_oplen", header: "parser.h".}
 
-    parseC("tests/texture.mdl")
+    if paramCount() > 0:
+        let p = paramStr(1)
+        parseC(cstring(p))
+    else:
+        parseC("tests/texture.mdl")
 
     let 
         c: ptr UncheckedArray[cSymTab] =  getSym()
@@ -96,8 +97,8 @@ proc main() =
     if nFrames > 0:
         discard existsOrCreateDir("anim")
         for f in 0..<nFrames:
-            execOp(symTab, opTab, knobs, f, nFrames, edges, polygons, normals, t, shadingType, ns, cs, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
-            savePpm(s, "img.ppm")
+            execOp(symTab, opTab, knobs, f, nFrames, edges, polygons, normals, t, shadingType, ns, cs, s[], zb[], color, view, light, ambient, areflect, dreflect, sreflect)
+            savePpm(s[], "img.ppm")
             let c: string = align($f, 3, '0')
             discard execCmd(&"convert img.ppm anim/{basename}{c}.png")
             clearScreen(s)
@@ -105,7 +106,7 @@ proc main() =
             cs = newStack[Matrix]()
         discard execCmd(&"convert -delay 1.7 anim/{basename}* {basename}.gif")
     else:
-        execOp(symTab, opTab, knobs, 0, nFrames, edges, polygons, normals, t, shadingType, ns, cs, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
+        execOp(symTab, opTab, knobs, 0, nFrames, edges, polygons, normals, t, shadingType, ns, cs, s[], zb[], color, view, light, ambient, areflect, dreflect, sreflect)
     # parseFile("script", edges, polygons, cs, s, zb, view, ambient, light, areflect, dreflect, sreflect)
     # echo mdlParse("sphere 0 10 20 30")
 

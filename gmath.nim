@@ -50,7 +50,7 @@ proc calculateDiffuse(light: Matrix, dreflect: tuple, normal: tuple): Color =
     result.green = (light[1][1] * dreflect[1] * d).clamp(0, 255)
     result.blue = (light[1][2] * dreflect[2] * d).clamp(0, 255)
 
-proc calculateSpecular(light: Matrix, sreflect: tuple, view, normal: tuple): Color =
+proc calculateSpecular*(light: Matrix, sreflect: tuple, view, normal: tuple): Color =
     var 
         n: tuple = normalize(normal)
         l: tuple = normalize((light[0][0], light[0][1], light[0][2]))
@@ -71,9 +71,9 @@ proc calculateTDiffuse(light: Matrix, dreflect: tuple, normal: tuple): Color =
         l: tuple = normalize((light[0][0], light[0][1], light[0][2]))
         d: float = dotProduct(n, l)
     
-    result.red = (dreflect[0] * d)
-    result.green = (dreflect[1] * d)
-    result.blue = (dreflect[2] * d)
+    result.red = (dreflect[0] * d).clamp(0, 1)
+    result.green = (dreflect[1] * d).clamp(0, 1)
+    result.blue = (dreflect[2] * d).clamp(0, 1)
 
 # proc calculateTSpecular(light: Matrix, sreflect: tuple, view, normal: tuple): Color =
 #     var 
@@ -97,21 +97,23 @@ proc getLighting*(normal, view: tuple, alight: Color, light: Matrix, areflect, d
 
     
 proc getTLighting*(normal, view: tuple, alight: Color, light: Matrix, areflect, dreflect, sreflect: tuple, tx, ty: float, maps: array[3, TextureArrayRef]): Color =
-    # echo "yo"
-    # echo tx
-    # echo ty
     let
         a = calculateTAmbient(alight, areflect)
         d = calculateTDiffuse(light, dreflect, normal)
         s = calculateSpecular(light, sreflect, view, normal)
-    # echo "dred " & $d.red
-    # echo "dgreen " & $d.green
-    let
         mapKd = maps[1]
         xs = mapKd[0].len
         ys = mapKd[].len
         td = mapKd[int(tx * float(xs-1))][int(ty * float(ys-1))]
-    var x = a + d
+    var x = a+d
     clampTColor(x)
     result = x * td + s
     clampColor(result)
+
+# FOR GOURAUD WITH TEXTURES
+proc getGTLighting*(normal: tuple, alight: Color, light: Matrix, areflect, dreflect, sreflect: tuple): Color =
+    let
+        a = calculateTAmbient(alight, areflect)
+        d = calculateTDiffuse(light, dreflect, normal)
+    result = a+d
+    clampTColor(result)

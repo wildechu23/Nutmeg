@@ -455,7 +455,6 @@ proc cOptoOp*(otab: cCommand, symTab: seq[SymTab]): Command =
 
 proc execOp*(symTab: var seq[SymTab], opTab: seq[Command], knobs: seq[seq[varyNode]], f: int, numFrames: int, edges, polygons, normals: var Matrix, tCoords: var seq[(string, float, float)], shadingType: var ShadingType, ns, cs: var Stack[Matrix], s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     for i in opTab:
-        # if i.opcode == 265:
         case i.kind:
         of box:
             addBox(polygons, i.boxd0[0], i.boxd0[1], i.boxd0[2], i.boxd1[0], i.boxd1[1], i.boxd1[2])
@@ -510,6 +509,7 @@ proc execOp*(symTab: var seq[SymTab], opTab: seq[Command], knobs: seq[seq[varyNo
             addMesh(polygons, normals, tCoords, i.meshName, symTab)
             mul(cs[^1], polygons)
             mul(ns[^1], normals)
+            # TODO: SET OTHER CONSTANTS UP
             if i.meshConstants == nil:
                 drawPolygons(polygons, normals, tCoords, symTab, shadingType, s, zb, color, view, light, ambient, areflect, dreflect, sreflect)
             else:

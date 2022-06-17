@@ -3,9 +3,11 @@ import std/strformat, std/sequtils, strutils
 type
     Color* = tuple[red, green, blue: float]
     Screen*[XRES, YRES: static[int]] = array[XRES, array[YRES, Color]]
+    ScreenRef*[XRES, YRES: static[int]] = ref Screen[XRES, YRES]
     TextureArray* = seq[seq[Color]]
     TextureArrayRef* = ref TextureArray
     ZBuffer*[XRES, YRES: static[int]] = array[XRES, array[YRES, float]]
+    ZBufferRef*[XRES, YRES: static[int]] = ref ZBuffer[XRES, YRES]
 
 const
     XRES*: int = 500
@@ -18,6 +20,21 @@ proc assignToRef[T](x: T): ref T =
   new result # allocate the ref object, any type works
   result[] = x # assign it x
   
+proc newScreen*(): ScreenRef[XRES, YRES] =
+    var t: array[XRES, array[YRES, Color]]
+    let c: Color = (red: DEFAULT_COLOR, green: DEFAULT_COLOR, blue: DEFAULT_COLOR)
+    for y in 0..<YRES:
+        for x in 0..<XRES:
+            t[x][y] = c
+    assignToRef(t)  
+
+proc newZBuffer*(): ZBufferRef[XRES, YRES] =
+    var t: array[XRES, array[YRES, float]]
+    for y in 0..<YRES:
+        for x in 0..<XRES:
+            t[x][y] = NegInf
+    assignToRef(t)
+
 proc newTArray*(xs, ys: int): TextureArrayRef =
     var t = newSeqWith(ys, newSeq[Color](xs))
     for y in 0..<ys:
@@ -79,13 +96,13 @@ proc plot*(s: var Screen[XRES, YRES], zb: var ZBuffer, c: Color, x, y: int, z: f
         #     echo $x & ", " & $ny
         zb[x][ny] = z
 
-proc clearScreen*(s: var Screen) =
+proc clearScreen*(s: var ScreenRef) =
     let c: Color = (red: DEFAULT_COLOR, green: DEFAULT_COLOR, blue: DEFAULT_COLOR)
     for y in 0..<YRES:
         for x in 0..<XRES:
             s[x][y] = c
 
-proc clearZBuffer*(zb: var ZBuffer) =
+proc clearZBuffer*(zb: var ZBufferRef) =
     for y in 0..<YRES:
         for x in 0..<XRES:
             zb[x][y] = NegInf
@@ -118,6 +135,7 @@ proc savePpm*(s: Screen, path: string) =
 
 proc readPpm*(path: string): TextureArrayRef =
     let f = open(path, fmRead)
+    defer: f.close()
     var line: string
     discard f.readLine(line)
     discard f.readLine(line)
@@ -125,16 +143,17 @@ proc readPpm*(path: string): TextureArrayRef =
         dim = line.splitWhitespace()
         xs: int = parseInt(dim[0])
         ys: int = parseInt(dim[1])
+    discard f.readLine(line)
     var 
         c: array[3, char]
         s: TextureArrayRef = newTArray(xs, ys)
         x = 0
         y = 0
     while(f.readChars(c) > 0 and y < ys):
-        s[x][y].red = float(c[0])
+        s[x][ys-y-1].red = float(c[0])
         # echo s[x][y].red
-        s[x][y].green = float(c[1])
-        s[x][y].blue = float(c[2])
+        s[x][ys-y-1].green = float(c[1])
+        s[x][ys-y-1].blue = float(c[2])
         x += 1
         if x > xs - 1:
             x = 0

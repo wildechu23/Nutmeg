@@ -180,6 +180,7 @@ proc addTorus*(m: var Matrix, cx, cy, cz, r1, r2: float, step: int) =
 
 proc addMtl*(path: string, s: var seq[SymTab]) =
     let f = open(path, fmRead)
+    defer: f.close()
     var 
         line: string
         newMat: SymTab
@@ -214,10 +215,8 @@ proc addMtl*(path: string, s: var seq[SymTab]) =
                 newMat.c.mapKs = arg[1]
             else:
                 discard
-    
     if newMat != nil:
         s.add(newMat)
-
 
 proc addMesh*(m, n: var Matrix, t: var seq[(string, float, float)], path: string, s: var seq[SymTab]) =
     let f = open(path, fmRead)
@@ -526,17 +525,25 @@ proc drawGScanline*(x0: int, z0: float, x1: int, z1: float, y: int, s: var Scree
         tya = ty0
         tyb = ty1
     # deleted the + 1 in xb - xa + 1
-    let dz: float = (if (xb - xa) != 0: (zb - za) / float(xb - xa) else: 0)
-    let dc: Color = (if not cmp(ia, ib): (ib - ia) / float(xb - xa) else: (red: 0.0, green: 0.0, blue: 0.0))
-    let dtx: float = (if (xb - xa) != 0: (txb - txa) / float(xb - xa) else: 0)
-    let dty: float = (if (xb - xa) != 0: (tyb - tya) / float(xb - xa) else: 0)
+    let 
+        dz: float = (if (xb - xa) != 0: (zb - za) / float(xb - xa) else: 0)
+        dc: Color = (if not cmp(ia, ib): (ib - ia) / float(xb - xa) else: (red: 0.0, green: 0.0, blue: 0.0))
+        dtx: float = (if (xb - xa) != 0: (txb - txa) / float(xb - xa) else: 0)
+        dty: float = (if (xb - xa) != 0: (tyb - tya) / float(xb - xa) else: 0)
     z = za
     c = ia
     tx = txa
     ty = tya
+    let 
+        spec = calculateSpecular(light, sreflect, view, n)
+        mapKd = maps[1]
+        xs = mapKd[0].len
+        ys = mapKd[].len
+        td = mapKd[int(tx * float(xs-1))][int(ty * float(ys-1))]
     for x in xa..xb:
-        let ct = getTLighting(n, view, ambient, light, areflect, dreflect, sreflect, tx, ty, maps)
-        plot(s, zbuffer, ct, x, y, z)
+        var ct = c * td + spec
+        clampColor(ct)
+        plot(s, zbuffer, ct , x, y, z)
         z += dz
         c = c + dc
         tx += dtx
@@ -673,27 +680,16 @@ proc scanLine(m: Matrix, i: int, s: var Screen, zb: var ZBuffer, c: Color) =
         z1 += dz1
         y += 1
 
-proc scanLine(m: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], i: int, s: var Screen, zb: var ZBuffer, n: tuple, c: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
+proc scanLine(m: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], i: int, s: var Screen, zb: var ZBuffer, n: tuple, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple, maps: array[3, TextureArrayRef]) =
     var 
         p: Matrix = m[3*i .. 3*i + 2]
         q = newOrderedTable[seq[float], (string, float, float)]()
         flip = 0
-        maps: array[3, TextureArrayRef]
-
-    let 
-        mat: SymTab = findName(symTab, t[2*i][0])
 
         
     for j in 0..<3:
         q[m[3*i + j]] = t[3*i + j]
     
-    if mat.c.mapKa != "":
-        maps[0] = readPpm(mat.c.mapKa)
-    if mat.c.mapKd != "":
-        maps[1] = readPpm(mat.c.mapKd)
-    if mat.c.mapKs != "":
-        maps[2] = readPpm(mat.c.mapKs)
-        
     p.sort(cmpY)
     # q.sort(cmpHashY)
     # bottom: p[0], middle: p[1], top: p[2]
@@ -748,7 +744,7 @@ proc scanLine(m: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], i:
             z1 = p[1][2]
             tx1 = qtx1
             ty1 = qty1
-        drawScanline(int(x0), z0, int(x1), z1, y, s, zb, c, tx0, tx1, ty0, ty1, view, light, ambient, areflect, dreflect, sreflect, maps)
+        drawScanline(int(x0), z0, int(x1), z1, y, s, zb, n, tx0, tx1, ty0, ty1, view, light, ambient, areflect, dreflect, sreflect, maps)
         x0 += dx0
         x1 += dx1
         z0 += dz0
@@ -821,25 +817,14 @@ proc gScanLine(m, n: Matrix, i: int, s: var Screen, zb: var ZBuffer, view: tuple
         c1 = c1 + dc1
         y += 1
 
-proc gScanLine(m, n: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], i: int, s: var Screen, zb: var ZBuffer, normal, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
+proc gScanLine(m, n: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], i: int, s: var Screen, zb: var ZBuffer, normal, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple, maps: array[3, TextureArrayRef]) =
     var 
         p: Matrix = m[3*i .. 3*i + 2]
         q = newOrderedTable[seq[float], (seq[float], (string, float, float))]()
         flip = 0
-        maps: array[3, TextureArrayRef]
-
-    let 
-        mat: SymTab = findName(symTab, t[2*i][0])
     
     for j in 0..<3:
         q[m[3*i + j]] = (n[3*i + j], t[3*i + j])
-
-    if mat.c.mapKa != "":
-        maps[0] = readPpm(mat.c.mapKa)
-    if mat.c.mapKd != "":
-        maps[1] = readPpm(mat.c.mapKd)
-    if mat.c.mapKs != "":
-        maps[2] = readPpm(mat.c.mapKs)
 
     p.sort(cmpY)
     # q.sort(cmpHashY)
@@ -856,9 +841,9 @@ proc gScanLine(m, n: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab]
         qty1 = q[p[1]][1][2]
         qtx2 = q[p[2]][1][1]
         qty2 = q[p[2]][1][2]
-        i0: Color = getLighting(n0, view, ambient, light, areflect, dreflect, sreflect)
-        i1: Color = getLighting(n1, view, ambient, light, areflect, dreflect, sreflect)
-        i2: Color = getLighting(n2, view, ambient, light, areflect, dreflect, sreflect)
+        i0: Color = getGTLighting(n0, ambient, light, areflect, dreflect, sreflect)
+        i1: Color = getGTLighting(n1, ambient, light, areflect, dreflect, sreflect)
+        i2: Color = getGTLighting(n2, ambient, light, areflect, dreflect, sreflect)
 
     var
         x0 = p[0][0]
@@ -976,25 +961,14 @@ proc pScanLine(m, n: Matrix, i: int, s: var Screen, zb: var ZBuffer, view: tuple
         nx1 = nx1 + dn1
         y += 1
 
-proc pScanLine(m, n: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], i: int, s: var Screen, zb: var ZBuffer, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
+proc pScanLine(m, n: Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], i: int, s: var Screen, zb: var ZBuffer, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple, maps: array[3, TextureArrayRef]) =
     var 
         p: Matrix = m[3*i .. 3*i + 2]
         q = newOrderedTable[seq[float], (seq[float], (string, float, float))]()
         flip = 0
-        maps: array[3, TextureArrayRef]
-
-    let 
-        mat: SymTab = findName(symTab, t[2*i][0])
 
     for j in 0..<3:
         q[m[3*i + j]] = (n[3*i + j], t[3*i + j])
-
-    if mat.c.mapKa != "":
-        maps[0] = readPpm(mat.c.mapKa)
-    if mat.c.mapKd != "":
-        maps[1] = readPpm(mat.c.mapKd)
-    if mat.c.mapKs != "":
-        maps[2] = readPpm(mat.c.mapKs)
 
     p.sort(cmpY)
     # q.sort(cmpHashY)
@@ -1081,7 +1055,23 @@ proc drawGPolygons*(m, n: var Matrix, t: seq[(string, float, float)], symTab: se
     for i in 0..<(m.len div 3):
         let fnormal = ((n[3*i][0] + n[3*i + 1][0] + n[3*i + 2][0]) / 3, (n[3*i][1] + n[3*i + 1][1] + n[3*i + 2][1]) / 3, (n[3*i][2] + n[3*i + 1][2] + n[3*i + 2][2]) / 3)
         if dotProduct(fnormal, (0.0, 0.0, 1.0)) > 0:
-            gScanLine(m, n, t, symTab, i, s, zb, fnormal, view, light, ambient, areflect, dreflect, sreflect)
+            var maps: array[3, TextureArrayRef]
+            let
+                mat: SymTab = findName(symTab, t[3*i][0])
+                ar = (mat.c.r[0], mat.c.g[0], mat.c.b[0])
+                dr = (mat.c.r[1], mat.c.g[1], mat.c.b[1])
+                sr = (mat.c.r[2], mat.c.g[2], mat.c.b[2])
+            if mat.c.mapKa != "":
+                maps[0] = readPpm(mat.c.mapKa)
+            if mat.c.mapKd != "":
+                maps[1] = readPpm(mat.c.mapKd)
+            if mat.c.mapKs != "":
+                maps[2] = readPpm(mat.c.mapKs)
+
+            if maps[1] != nil:
+                gScanLine(m, n, t, symTab, i, s, zb, fnormal, view, light, ambient, ar, dr, sr, maps)
+            else:
+                gScanLine(m, n, i, s, zb, view, light, ambient, ar, dr, sr)
 
 proc drawPPolygons*(m, n: var Matrix, s: var Screen, zb: var ZBuffer, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     # echo m
@@ -1095,7 +1085,23 @@ proc drawPPolygons*(m, n: var Matrix, t: seq[(string, float, float)], symTab: se
     for i in 0..<(m.len div 3):
         let fnormal = ((n[3*i][0] + n[3*i + 1][0] + n[3*i + 2][0]) / 3, (n[3*i][1] + n[3*i + 1][1] + n[3*i + 2][1]) / 3, (n[3*i][2] + n[3*i + 1][2] + n[3*i + 2][2]) / 3)
         if dotProduct(fnormal, (0.0, 0.0, 1.0)) > 0:
-            pScanLine(m, n, t, symTab, i, s, zb, view, light, ambient, areflect, dreflect, sreflect)
+            var maps: array[3, TextureArrayRef]
+            let
+                mat: SymTab = findName(symTab, t[3*i][0])
+                ar = (mat.c.r[0], mat.c.g[0], mat.c.b[0])
+                dr = (mat.c.r[1], mat.c.g[1], mat.c.b[1])
+                sr = (mat.c.r[2], mat.c.g[2], mat.c.b[2])
+            if mat.c.mapKa != "":
+                maps[0] = readPpm(mat.c.mapKa)
+            if mat.c.mapKd != "":
+                maps[1] = readPpm(mat.c.mapKd)
+            if mat.c.mapKs != "":
+                maps[2] = readPpm(mat.c.mapKs)
+            
+            if maps[1] != nil:
+                pScanLine(m, n, t, symTab, i, s, zb, view, light, ambient, ar, dr, sr, maps)
+            else:
+                pScanLine(m, n, i, s, zb, view, light, ambient, ar, dr, sr)  
 
 proc drawPolygons*(m, n: var Matrix, t: seq[(string, float, float)], symTab: seq[SymTab], shadingType: ShadingType, s: var Screen, zb: var ZBuffer, color: Color, view: tuple, light: Matrix, ambient: Color, areflect, dreflect, sreflect: tuple) =
     if t.len > 0:
@@ -1108,11 +1114,25 @@ proc drawPolygons*(m, n: var Matrix, t: seq[(string, float, float)], symTab: seq
             for i in 0..<(m.len div 3):
                 let n = calculateNormal(m, 3*i)
                 if dotProduct(n, (0.0, 0.0, 1.0)) > 0:
-                    # drawLine(int(a[0]), int(a[1]), a[2], int(b[0]), int(b[1]), b[2], s, zb, color)
-                    # drawLine(int(b[0]), int(b[1]), b[2], int(c[0]), int(c[1]), c[2], s, zb, color)
-                    # drawLine(int(c[0]), int(c[1]), c[2], int(a[0]), int(a[1]), a[2], s, zb, color)
-                    let il: Color = getLighting(n, view, ambient, light, areflect, dreflect, sreflect)
-                    scanLine(m, t, symTab, i, s, zb, n, il, view, light, ambient, areflect, dreflect, sreflect);
+                    var maps: array[3, TextureArrayRef]
+                    let
+                        mat: SymTab = findName(symTab, t[3*i][0])
+                        ar = (mat.c.r[0], mat.c.g[0], mat.c.b[0])
+                        dr = (mat.c.r[1], mat.c.g[1], mat.c.b[1])
+                        sr = (mat.c.r[2], mat.c.g[2], mat.c.b[2])
+
+                    if mat.c.mapKa != "":
+                        maps[0] = readPpm(mat.c.mapKa)
+                    if mat.c.mapKd != "":
+                        maps[1] = readPpm(mat.c.mapKd)
+                    if mat.c.mapKs != "":
+                        maps[2] = readPpm(mat.c.mapKs)
+
+                    if maps[1] != nil:
+                        scanLine(m, t, symTab, i, s, zb, n, view, light, ambient, ar, dr, sr, maps);
+                    else:
+                        let il: Color = getLighting(n, view, ambient, light, ar, dr, sr)
+                        scanLine(m, i, s, zb, il);
         else:
             discard
     else:
